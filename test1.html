@@ -318,39 +318,68 @@ html
     </div>
 
 </section>
-
+<!-- ================================
+     PATIENT REMINDERS PAGE
+================================ -->
 
 <section
-    id="progressSection"
+    id="remindersSection"
     class="assistant"
-    style="display: none;"
+    style="
+        display: none;
+        background: linear-gradient(135deg, #ffffff, #f7f9ff);
+        border: 1px solid #dce2ea;
+        box-shadow: 0 8px 25px rgba(49, 87, 213, 0.08);
+    "
 >
 
-    <h2>📊 My Progress</h2>
+    <div style="
+        display: flex;
+        justify-content: space-between;
+        align-items: center;
+        gap: 15px;
+        margin-bottom: 10px;
+    ">
 
-    <p>
-        Your cognitive activity performance is shown below.
-    </p>
+        <div>
+            <h2 style="
+                margin: 0;
+                font-size: 30px;
+            ">
+                📅 My Reminders
+            </h2>
 
-    <div id="progressContent">
-        Loading progress...
+            <p style="
+                margin: 8px 0 0;
+                color: #526070;
+                font-size: 17px;
+            ">
+                Your caregiver's reminders for today and upcoming days.
+            </p>
+        </div>
+
+        <div style="
+            font-size: 40px;
+            background: #eef3ff;
+            padding: 12px 16px;
+            border-radius: 16px;
+        ">
+            🔔
+        </div>
+
     </div>
 
-</section>
-<section
-    id="caregiverSection"
-    class="assistant"
-    style="display: none;"
->
 
-    <h2>👨‍👩‍👧 Caregiver Dashboard</h2>
+    <div id="remindersContent">
 
-    <p>
-        Monitor the patient's cognitive activity and recent performance.
-    </p>
+        <div style="
+            text-align: center;
+            padding: 35px 15px;
+            color: #657184;
+        ">
+            Loading reminders...
+        </div>
 
-    <div id="caregiverContent">
-        Loading caregiver dashboard...
     </div>
 
 </section>
@@ -691,6 +720,39 @@ document
         loginUser("caregiver");
 
     });
+    // ================================
+// ================================
+// CAREGIVER AREA BUTTON
+// ================================
+
+const caregiverAreaButton =
+    document.getElementById("caregiverBtn");
+
+if (caregiverAreaButton) {
+
+    caregiverAreaButton.addEventListener("click", () => {
+
+        console.log("🔥 CAREGIVER AREA CLICKED");
+
+        const caregiverSection =
+            document.getElementById("caregiverSection");
+
+        const createReminderSection =
+            document.getElementById("createReminderSection");
+
+        if (caregiverSection) {
+            caregiverSection.style.display = "block";
+        }
+
+        if (createReminderSection) {
+            createReminderSection.style.display = "block";
+        }
+
+        console.log("🔔 Create Reminder opened.");
+
+    });
+
+}
         // Initialize App Check
         initializeAppCheck(app, {
             provider: new ReCaptchaEnterpriseProvider(
@@ -775,44 +837,249 @@ document
 // REMINDERS
 // ================================
 
-document.getElementById("reminderBtn")
+document
+    .getElementById("reminderBtn")
     .addEventListener("click", async () => {
 
-       const reminders = [];
+        const remindersSection =
+            document.getElementById("remindersSection");
 
-try {
+        const remindersContent =
+            document.getElementById("remindersContent");
 
-    const reminderQuery = query(
-        collection(db, "reminders"),
-        where("patientId", "==", PATIENT_ID)
-    );
+        // Show Reminders page
+        remindersSection.style.display = "block";
 
-    const snapshot = await getDocs(reminderQuery);
+        remindersSection.scrollIntoView({
+            behavior: "smooth"
+        });
 
-    snapshot.forEach((doc) => {
-        reminders.push(doc.data());
-    });
+        remindersContent.innerHTML =
+            "Loading reminders...";
 
-    if (reminders.length === 0) {
-        alert("No reminders found.");
-        return;
-    }
+        try {
 
-            let message = "🔔 Your Reminders\n\n";
+            const reminderQuery = query(
+                collection(db, "reminders"),
+                where("patientId", "==", PATIENT_ID)
+            );
 
-            reminders.forEach((reminder) => {
+            const snapshot =
+                await getDocs(reminderQuery);
 
-                const time = reminder.time
-                    ? reminder.time.toDate().toLocaleString()
-                    : "Time not set";
+            if (snapshot.empty) {
 
-                message +=
-                    `• ${reminder.title}\n` +
-                    `  Type: ${reminder.type}\n` +
-                    `  Time: ${time}\n\n`;
+                remindersContent.innerHTML =
+                    "<p>No reminders found.</p>";
+
+                return;
+            }
+
+            const reminders = [];
+
+            snapshot.forEach((doc) => {
+
+                reminders.push({
+                    id: doc.id,
+                    ...doc.data()
+                });
+
             });
 
-            alert(message);
+            // Sort reminders by date and time
+            reminders.sort((a, b) => {
+
+    const getDateTime = (reminder) => {
+
+        if (reminder.date && reminder.time) {
+            return new Date(
+                `${reminder.date}T${reminder.time}`
+            );
+        }
+
+        if (reminder.time && reminder.time.toDate) {
+            return reminder.time.toDate();
+        }
+
+        return new Date(0);
+    };
+
+    return getDateTime(a) - getDateTime(b);
+
+});
+
+            let html = "";
+
+const now = new Date();
+
+reminders.forEach((reminder) => {
+
+    let reminderDate;
+    let reminderTime;
+    let reminderDateTime;
+
+    // New reminder format
+    if (reminder.date && reminder.time) {
+
+        reminderDate =
+            reminder.date;
+
+        reminderTime =
+            reminder.time;
+
+        reminderDateTime =
+            new Date(
+                `${reminder.date}T${reminder.time}`
+            );
+
+    }
+
+    // Old reminder format
+    else if (reminder.time && reminder.time.toDate) {
+
+        const oldDate =
+            reminder.time.toDate();
+
+        reminderDate =
+            oldDate.toISOString().split("T")[0];
+
+        reminderTime =
+            oldDate.toLocaleTimeString([], {
+                hour: "2-digit",
+                minute: "2-digit"
+            });
+
+        reminderDateTime =
+            oldDate;
+
+    }
+
+    else {
+
+        reminderDate = "-";
+        reminderTime = "-";
+        reminderDateTime = new Date(0);
+
+    }
+
+    const isPast =
+        reminderDateTime < now;
+
+    const isToday =
+        reminder.date ===
+        new Date().toISOString().split("T")[0];
+
+    let statusText = "Upcoming";
+let statusStyle =
+    "background: #eef3ff; color: #3157d5;";
+
+// Reminder is due if its scheduled time has arrived
+const isDue =
+    reminderDateTime <= now &&
+    reminderDateTime > new Date(now.getTime() - 5 * 60 * 1000);
+
+if (isDue) {
+
+    statusText = "🔔 Due Now";
+    statusStyle =
+        "background: #fff3cd; color: #946200;";
+
+} else if (isPast) {
+
+    statusText = "Passed";
+    statusStyle =
+        "background: #f1f3f5; color: #657184;";
+
+} else if (isToday) {
+
+    statusText = "Today";
+    statusStyle =
+        "background: #e8f7ee; color: #23864b;";
+
+}
+
+    html += `
+        <div style="
+            background: white;
+            border: 1px solid #dce2ea;
+            border-radius: 18px;
+            padding: 20px;
+            margin-top: 16px;
+            box-shadow: 0 5px 15px rgba(0,0,0,0.05);
+        ">
+
+            <div style="
+                display: flex;
+                justify-content: space-between;
+                align-items: flex-start;
+                gap: 15px;
+            ">
+
+                <div>
+
+                    <h3 style="
+                        margin: 0 0 8px;
+                        font-size: 22px;
+                    ">
+                        🔔 ${reminder.title}
+                    </h3>
+
+                    <p style="
+                        margin: 0;
+                        color: #526070;
+                        font-size: 16px;
+                    ">
+                        ${reminder.type || "Reminder"}
+                    </p>
+
+                </div>
+
+                <span style="
+                    ${statusStyle}
+                    padding: 7px 12px;
+                    border-radius: 20px;
+                    font-size: 14px;
+                    font-weight: bold;
+                    white-space: nowrap;
+                ">
+                    ${statusText}
+                </span>
+
+            </div>
+
+            <div style="
+                display: flex;
+                gap: 12px;
+                flex-wrap: wrap;
+                margin-top: 18px;
+            ">
+
+                <div style="
+                    background: #f4f7fb;
+                    padding: 10px 14px;
+                    border-radius: 10px;
+                    font-size: 15px;
+                ">
+                    📅 ${reminderDate}
+                </div>
+
+                <div style="
+                    background: #f4f7fb;
+                    padding: 10px 14px;
+                    border-radius: 10px;
+                    font-size: 15px;
+                "
+                ⏰ ${reminderTime}
+                    
+                </div>
+
+            </div>
+
+        </div>
+    `;
+});
+
+remindersContent.innerHTML = html;
 
         } catch (error) {
 
@@ -821,11 +1088,31 @@ try {
                 error
             );
 
-            alert("Could not load reminders.");
+            remindersContent.innerHTML =
+                "<p>❌ Could not load reminders.</p>";
         }
+
     });
+    // ================================
+// AUTO CHECK REMINDERS
+// ================================
 
+setInterval(() => {
 
+    const remindersSection =
+        document.getElementById("remindersSection");
+
+    // Only refresh if Reminders page is currently open
+    if (
+        remindersSection &&
+        remindersSection.style.display !== "none"
+    ) {
+        document
+            .getElementById("reminderBtn")
+            .click();
+    }
+
+}, 60000);
 // ================================
 // PROGRESS
 // ================================
@@ -1285,6 +1572,71 @@ checkAnswer.addEventListener("click", async () => {
 nextRound.addEventListener("click", () => {
     startRound();
 });
+// ================================
+// SAVE REMINDER
+// ================================
+
+document
+    .getElementById("saveReminderBtn")
+    .addEventListener("click", async () => {
+
+        const title =
+            document.getElementById("reminderTitle").value.trim();
+
+        const type =
+            document.getElementById("reminderType").value.trim();
+
+        const date =
+            document.getElementById("reminderDate").value;
+
+        const time =
+            document.getElementById("reminderTime").value;
+
+        const message =
+            document.getElementById("reminderMessage");
+
+        if (!title || !type || !date || !time) {
+
+            message.textContent =
+                "Please fill in all reminder details.";
+
+            return;
+        }
+
+        try {
+
+            await addDoc(
+                collection(db, "reminders"),
+                {
+                    patientId: PATIENT_ID,
+                    title: title,
+                    type: type,
+                    date: date,
+                    time: time,
+                    createdAt: serverTimestamp()
+                }
+            );
+
+            message.textContent =
+                "✅ Reminder saved successfully.";
+
+            document.getElementById("reminderTitle").value = "";
+            document.getElementById("reminderType").value = "";
+            document.getElementById("reminderDate").value = "";
+            document.getElementById("reminderTime").value = "";
+
+        } catch (error) {
+
+            console.error(
+                "Error saving reminder:",
+                error
+            );
+
+            message.textContent =
+                "❌ Failed to save reminder.";
+        }
+
+    });
 
     </script>
 
