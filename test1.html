@@ -224,7 +224,7 @@ html
 
         <section class="cards">
 
-            <div class="card">
+            <div id="cognitiveActivityCard" class="card">
                 <h3>🧠 Cognitive Activity</h3>
                 <p>
                     Complete simple activities designed to exercise
@@ -354,7 +354,105 @@ html
     </div>
 
 </section>
+    <!-- ================================
+     CREATE REMINDER
+================================ -->
 
+<section
+    id="createReminderSection"
+    class="assistant"
+    style="display: none;"
+>
+
+    <h2>🔔 Create Reminder</h2>
+
+    <p>
+        Create a reminder for the patient.
+    </p>
+
+    <label for="reminderTitle">
+        Reminder
+    </label>
+
+    <input
+        id="reminderTitle"
+        type="text"
+        placeholder="Example: Drink water"
+        style="
+            width: 100%;
+            padding: 15px;
+            font-size: 18px;
+            border: 1px solid #bfc8d6;
+            border-radius: 10px;
+            margin: 10px 0 15px;
+        "
+    >
+
+    <label for="reminderType">
+        Type
+    </label>
+
+    <input
+        id="reminderType"
+        type="text"
+        placeholder="Example: Hydration"
+        style="
+            width: 100%;
+            padding: 15px;
+            font-size: 18px;
+            border: 1px solid #bfc8d6;
+            border-radius: 10px;
+            margin: 10px 0 15px;
+        "
+    >
+
+    <label for="reminderDate">
+        Date
+    </label>
+
+    <input
+        id="reminderDate"
+        type="date"
+        style="
+            width: 100%;
+            padding: 15px;
+            font-size: 18px;
+            border: 1px solid #bfc8d6;
+            border-radius: 10px;
+            margin: 10px 0 15px;
+        "
+    >
+
+    <label for="reminderTime">
+        Time
+    </label>
+
+    <input
+        id="reminderTime"
+        type="time"
+        style="
+            width: 100%;
+            padding: 15px;
+            font-size: 18px;
+            border: 1px solid #bfc8d6;
+            border-radius: 10px;
+            margin: 10px 0 15px;
+        "
+    >
+
+    <button id="saveReminderBtn">
+        💾 Save Reminder
+    </button>
+
+    <p
+        id="reminderMessage"
+        style="
+            margin-top: 15px;
+            font-weight: bold;
+        "
+    ></p>
+
+</section>
         <section class="assistant">
 
             <h2>🤖 Memory Assistant</h2>
@@ -537,6 +635,9 @@ const progressSection =
 const caregiverBtn =
     document.getElementById("caregiverBtn");
 
+const cognitiveActivityCard =
+    document.getElementById("cognitiveActivityCard");
+
 if (actualRole === "patient") {
 
     // Patient should not access caregiver dashboard
@@ -551,6 +652,11 @@ if (actualRole === "patient") {
     // Caregiver does not need the patient's personal progress section
     if (progressSection) {
         progressSection.style.display = "none";
+    }
+
+    // Hide cognitive activity from caregiver
+    if (cognitiveActivityCard) {
+        cognitiveActivityCard.style.display = "none";
     }
 
     console.log("👨‍👩‍👧 Caregiver view enabled.");
