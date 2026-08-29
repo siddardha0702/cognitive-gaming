@@ -1,0 +1,958 @@
+html
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+
+    <title>Cognitive Gaming - Memory Assistance</title>
+
+    <style>
+        * {
+            box-sizing: border-box;
+        }
+
+        body {
+            margin: 0;
+            font-family: Arial, sans-serif;
+            background: #f4f7fb;
+            color: #172033;
+        }
+
+        header {
+            background: #ffffff;
+            padding: 24px 7%;
+            border-bottom: 1px solid #dce2ea;
+        }
+
+        header h1 {
+            margin: 0;
+            font-size: 32px;
+        }
+
+        header p {
+            margin: 8px 0 0;
+            font-size: 18px;
+            color: #526070;
+        }
+
+        main {
+            width: 86%;
+            max-width: 1100px;
+            margin: 35px auto;
+        }
+
+        .welcome {
+            background: #ffffff;
+            padding: 30px;
+            border-radius: 18px;
+            margin-bottom: 25px;
+        }
+
+        .welcome h2 {
+            margin-top: 0;
+            font-size: 30px;
+        }
+
+        .welcome p {
+            font-size: 19px;
+            line-height: 1.6;
+        }
+
+        .cards {
+            display: grid;
+            grid-template-columns: repeat(2, 1fr);
+            gap: 22px;
+        }
+
+        .card {
+            background: #ffffff;
+            border-radius: 18px;
+            padding: 28px;
+            border: 1px solid #dce2ea;
+        }
+
+        .card h3 {
+            font-size: 24px;
+            margin-top: 0;
+        }
+
+        .card p {
+            font-size: 18px;
+            line-height: 1.5;
+            color: #526070;
+        }
+
+        button {
+            border: none;
+            border-radius: 10px;
+            padding: 14px 22px;
+            font-size: 18px;
+            cursor: pointer;
+            background: #3157d5;
+            color: white;
+        }
+
+        button:hover {
+            opacity: 0.9;
+        }
+
+        .assistant {
+            margin-top: 25px;
+            background: #ffffff;
+            border-radius: 18px;
+            padding: 28px;
+            border: 1px solid #dce2ea;
+        }
+
+        textarea {
+            width: 100%;
+            min-height: 110px;
+            padding: 15px;
+            font-size: 17px;
+            border: 1px solid #bfc8d6;
+            border-radius: 10px;
+            resize: vertical;
+            margin-bottom: 15px;
+        }
+
+        #response {
+            margin-top: 20px;
+            padding: 18px;
+            background: #f4f7fb;
+            border-radius: 10px;
+            font-size: 17px;
+            line-height: 1.6;
+            white-space: pre-wrap;
+        }
+
+        footer {
+            text-align: center;
+            padding: 30px;
+            color: #657184;
+            font-size: 15px;
+        }
+
+        @media (max-width: 700px) {
+            .cards {
+                grid-template-columns: 1fr;
+            }
+
+            header h1 {
+                font-size: 26px;
+            }
+
+            .welcome h2 {
+                font-size: 25px;
+            }
+        }
+    </style>
+</head>
+
+<body>
+
+    <!-- App Check debug mode for local development -->
+    <script>
+        self.FIREBASE_APPCHECK_DEBUG_TOKEN = true;
+    </script>
+
+    <header>
+        <h1>🧠 Cognitive Gaming</h1>
+        <p>Memory Assistance & Cognitive Support Platform</p>
+    </header>
+
+    <main>
+
+        <section class="welcome">
+            <h2>Welcome 👋</h2>
+            <p>
+                This platform provides simple cognitive activities,
+                memory assistance, and supportive tools for elderly users.
+            </p>
+        </section>
+
+        <section class="cards">
+
+            <div class="card">
+                <h3>🧠 Cognitive Activity</h3>
+                <p>
+                    Complete simple activities designed to exercise
+                    memory, attention, and thinking skills.
+                </p>
+                <button id="activityBtn">
+                    Start Activity
+                </button>
+            </div>
+
+            <div class="card">
+                <h3>📅 Reminders</h3>
+                <p>
+                    Keep track of important daily reminders and routines.
+                </p>
+                <button id="reminderBtn">
+                    View Reminders
+                </button>
+            </div>
+
+            <div class="card">
+                <h3>📊 Progress</h3>
+                <p>
+                    View activity participation and progress over time.
+                </p>
+                <button id="progressBtn">
+                    View Progress
+                </button>
+            </div>
+
+            <div class="card">
+                <h3>👨‍👩‍👧 Caregiver</h3>
+                <p>
+                    A dedicated area for caregivers to support the user's
+                    daily activities and routines.
+                </p>
+                <button id="caregiverBtn">
+                    Caregiver Area
+                </button>
+            </div>
+
+       </section>
+
+<section id="memoryGame" class="assistant" style="display: none;">
+
+    <h2>🧠 Memory Sequence</h2>
+
+    <p id="gameInstructions">
+        Remember the numbers shown below.
+    </p>
+
+    <div id="sequence"
+         style="
+            font-size: 42px;
+            font-weight: bold;
+            letter-spacing: 15px;
+            text-align: center;
+            margin: 30px 0;
+         ">
+    </div>
+
+    <input
+        id="answer"
+        type="text"
+        placeholder="Enter the numbers you remember"
+        style="
+            width: 100%;
+            padding: 15px;
+            font-size: 20px;
+            border: 1px solid #bfc8d6;
+            border-radius: 10px;
+            margin-bottom: 15px;
+        "
+    >
+
+    <button id="checkAnswer">
+        Check Answer
+    </button>
+
+    <button id="nextRound"
+            style="display: none; margin-left: 10px;">
+        Next Round
+    </button>
+
+    <div id="gameResult"
+         style="
+            margin-top: 20px;
+            font-size: 20px;
+            font-weight: bold;
+         ">
+    </div>
+
+</section>
+
+
+<section
+    id="progressSection"
+    class="assistant"
+    style="display: none;"
+>
+
+    <h2>📊 My Progress</h2>
+
+    <p>
+        Your cognitive activity performance is shown below.
+    </p>
+
+    <div id="progressContent">
+        Loading progress...
+    </div>
+
+</section>
+<section
+    id="caregiverSection"
+    class="assistant"
+    style="display: none;"
+>
+
+    <h2>👨‍👩‍👧 Caregiver Dashboard</h2>
+
+    <p>
+        Monitor the patient's cognitive activity and recent performance.
+    </p>
+
+    <div id="caregiverContent">
+        Loading caregiver dashboard...
+    </div>
+
+</section>
+
+    <h2>🧠 Memory Sequence</h2>
+
+    <p id="gameInstructions">
+        Remember the numbers shown below.
+    </p>
+
+    <div id="sequence"
+         style="
+            font-size: 42px;
+            font-weight: bold;
+            letter-spacing: 15px;
+            text-align: center;
+            margin: 30px 0;
+         ">
+    </div>
+
+    <input
+        id="answer"
+        type="text"
+        placeholder="Enter the numbers you remember"
+        style="
+            width: 100%;
+            padding: 15px;
+            font-size: 20px;
+            border: 1px solid #bfc8d6;
+            border-radius: 10px;
+            margin-bottom: 15px;
+        "
+    >
+
+    <button id="checkAnswer">
+        Check Answer
+    </button>
+
+    <button id="nextRound"
+            style="display: none; margin-left: 10px;">
+        Next Round
+    </button>
+
+    <div id="gameResult"
+         style="
+            margin-top: 20px;
+            font-size: 20px;
+            font-weight: bold;
+         ">
+    </div>
+
+</section>
+
+        <section class="assistant">
+
+            <h2>🤖 Memory Assistant</h2>
+
+            <p>
+                Ask the assistant a general question or request help
+                with using the platform.
+            </p>
+
+            <textarea
+                id="prompt"
+                placeholder="Type your question here..."
+            ></textarea>
+
+            <button id="askGemini">
+                Ask Assistant
+            </button>
+
+            <div id="response">
+                The assistant's response will appear here.
+            </div>
+
+        </section>
+
+    </main>
+
+    <footer>
+        Cognitive Gaming • AI-Based Cognitive & Memory Assistance
+    </footer>
+
+
+    <script type="module">
+
+        // Firebase
+        import { initializeApp }
+            from "https://www.gstatic.com/firebasejs/12.18.0/firebase-app.js";
+
+        // Analytics
+        import { getAnalytics }
+            from "https://www.gstatic.com/firebasejs/12.18.0/firebase-analytics.js";
+            import {
+    getFirestore,
+    collection,
+    addDoc,
+    getDocs,
+    query,
+    where,
+    serverTimestamp
+} from "https://www.gstatic.com/firebasejs/12.18.0/firebase-firestore.js";
+        // App Check
+        import {
+            initializeAppCheck,
+            ReCaptchaEnterpriseProvider
+        } from "https://www.gstatic.com/firebasejs/12.18.0/firebase-app-check.js";
+
+        // Firebase AI Logic
+        import {
+            getAI,
+            getGenerativeModel,
+            GoogleAIBackend
+        } from "https://www.gstatic.com/firebasejs/12.18.0/firebase-ai.js";
+
+
+        // Firebase configuration
+        const firebaseConfig = {
+            apiKey: "AIzaSyDwPw2DS2KMJeFyQme4dWMSXPlaD1wMgvU",
+            authDomain: "cognitive-gaming.firebaseapp.com",
+            projectId: "cognitive-gaming",
+            storageBucket: "cognitive-gaming.firebasestorage.app",
+            messagingSenderId: "403629835058",
+            appId: "1:403629835058:web:d02620e9f67073aef0cd2b",
+            measurementId: "G-43X8ZQXE8G"
+        };
+
+
+        // Initialize Firebase
+        const app = initializeApp(firebaseConfig);
+        const db = getFirestore(app);
+        const PATIENT_ID = "FG36ijukJQ5rqkOT8";
+
+
+        // Initialize App Check
+        initializeAppCheck(app, {
+            provider: new ReCaptchaEnterpriseProvider(
+                "6LcWg5stAAAAALngrRuWkZcle7fyTtMweFFZOOgM"
+            ),
+            isTokenAutoRefreshEnabled: true
+        });
+
+
+        // Analytics
+        getAnalytics(app);
+
+
+        // Gemini
+        const ai = getAI(app, {
+            backend: new GoogleAIBackend()
+        });
+
+        const model = getGenerativeModel(ai, {
+            model: "gemini-3.5-flash"
+        });
+
+
+        console.log("Cognitive Gaming Firebase + Gemini ready!");
+
+
+        // Gemini Assistant
+        document
+            .getElementById("askGemini")
+            .addEventListener("click", async () => {
+
+                const prompt =
+                    document.getElementById("prompt").value.trim();
+
+                const responseElement =
+                    document.getElementById("response");
+
+
+                if (!prompt) {
+                    responseElement.textContent =
+                        "Please type a question first.";
+                    return;
+                }
+
+
+                responseElement.textContent =
+                    "The assistant is thinking...";
+
+
+                try {
+
+                    const result =
+                        await model.generateContent(
+                            `You are a friendly memory assistance AI
+                             for an elderly user.
+
+                             Give simple, clear and supportive answers.
+                             Do not diagnose medical conditions.
+                             Do not give medical treatment instructions.
+
+                             User question:
+                             ${prompt}`
+                        );
+
+
+                    responseElement.textContent =
+                        result.response.text();
+
+
+                } catch (error) {
+
+                    console.error("Gemini error:", error);
+
+                    responseElement.textContent =
+                        "Sorry, the assistant could not respond right now.";
+                }
+
+            });
+
+
+        // ================================
+// REMINDERS
+// ================================
+
+document.getElementById("reminderBtn")
+    .addEventListener("click", async () => {
+
+        const reminders = [];
+
+        try {
+
+            const snapshot =
+                await getDocs(collection(db, "reminders"));
+
+            snapshot.forEach((doc) => {
+                reminders.push(doc.data());
+            });
+
+            if (reminders.length === 0) {
+                alert("No reminders found.");
+                return;
+            }
+
+            let message = "🔔 Your Reminders\n\n";
+
+            reminders.forEach((reminder) => {
+
+                const time = reminder.time
+                    ? reminder.time.toDate().toLocaleString()
+                    : "Time not set";
+
+                message +=
+                    `• ${reminder.title}\n` +
+                    `  Type: ${reminder.type}\n` +
+                    `  Time: ${time}\n\n`;
+            });
+
+            alert(message);
+
+        } catch (error) {
+
+            console.error(
+                "Reminder loading error:",
+                error
+            );
+
+            alert("Could not load reminders.");
+        }
+    });
+
+
+// ================================
+// PROGRESS
+// ================================
+
+
+            
+
+       document.getElementById("progressBtn")
+    .addEventListener("click", async () => {
+
+        const progressSection =
+            document.getElementById("progressSection");
+
+        const progressContent =
+            document.getElementById("progressContent");
+
+        progressSection.style.display = "block";
+
+        progressSection.scrollIntoView({
+            behavior: "smooth"
+        });
+
+        progressContent.textContent =
+            "Loading your progress...";
+
+        try {
+const activityQuery = query(
+    collection(db, "activityResults"),
+    where("patientId", "==", PATIENT_ID)
+);
+
+const snapshot = await getDocs(activityQuery);
+
+            if (snapshot.empty) {
+
+                progressContent.textContent =
+                    "No activity results yet.";
+
+                return;
+            }
+
+            let totalScore = 0;
+            let activityCount = 0;
+
+            let html = "";
+
+            snapshot.forEach((doc) => {
+
+                const data = doc.data();
+
+                totalScore += data.score || 0;
+                activityCount++;
+
+                html += `
+                    <div style="
+                        background: #f4f7fb;
+                        padding: 18px;
+                        margin-bottom: 12px;
+                        border-radius: 12px;
+                    ">
+                        <strong>
+                            🧠 ${data.activityType || "Activity"}
+                        </strong>
+
+                        <br>
+
+                        Score:
+                        <strong>${data.score ?? 0}</strong>
+
+                        <br>
+
+                        Difficulty:
+                        ${data.difficulty ?? "-"}
+
+                        <br>
+
+                        Attempts:
+                        ${data.attempts ?? "-"}
+
+                        <br>
+
+                        Date:
+                        ${data.timestamp
+                            ? data.timestamp.toDate().toLocaleString()
+                            : "Not available"}
+                    </div>
+                `;
+            });
+
+            const averageScore =
+                Math.round(totalScore / activityCount);
+
+            progressContent.innerHTML = `
+                <div style="
+                    background: #eef3ff;
+                    padding: 20px;
+                    border-radius: 12px;
+                    margin-bottom: 20px;
+                ">
+                    <h3>📈 Overall Progress</h3>
+
+                    <p>
+                        Activities completed:
+                        <strong>${activityCount}</strong>
+                    </p>
+
+                    <p>
+                        Average score:
+                        <strong>${averageScore}</strong>
+                    </p>
+                </div>
+
+                <h3>Recent Activities</h3>
+
+                ${html}
+            `;
+
+        } catch (error) {
+
+            console.error(
+                "Progress loading error:",
+                error
+            );
+
+            progressContent.textContent =
+                "Could not load progress.";
+        }
+    });
+
+        // ================================
+// CAREGIVER DASHBOARD
+// ================================
+
+document.getElementById("caregiverBtn")
+    .addEventListener("click", async () => {
+
+        const caregiverSection =
+            document.getElementById("caregiverSection");
+
+        const caregiverContent =
+            document.getElementById("caregiverContent");
+
+        caregiverSection.style.display = "block";
+
+        caregiverSection.scrollIntoView({
+            behavior: "smooth"
+        });
+
+        caregiverContent.textContent =
+            "Loading patient activity...";
+
+        try {
+
+            const snapshot =
+                await getDocs(collection(db, "activityResults"));
+
+            if (snapshot.empty) {
+
+                caregiverContent.textContent =
+                    "No patient activity recorded yet.";
+
+                return;
+            }
+
+            let totalScore = 0;
+            let activityCount = 0;
+            let successfulActivities = 0;
+
+            let html = "";
+
+            snapshot.forEach((doc) => {
+
+                const data = doc.data();
+
+                totalScore += data.score || 0;
+                activityCount++;
+
+                if ((data.score || 0) >= 100) {
+                    successfulActivities++;
+                }
+
+                html += `
+                    <div style="
+                        background: #f4f7fb;
+                        padding: 18px;
+                        margin-bottom: 12px;
+                        border-radius: 12px;
+                    ">
+
+                        <strong>
+                            🧠 ${data.activityType || "Activity"}
+                        </strong>
+
+                        <br><br>
+
+                        Score:
+                        <strong>${data.score ?? 0}</strong>
+
+                        <br>
+
+                        Difficulty:
+                        ${data.difficulty ?? "-"}
+
+                        <br>
+
+                        Attempts:
+                        ${data.attempts ?? "-"}
+
+                        <br>
+
+                        Date:
+                        ${data.timestamp
+                            ? data.timestamp.toDate().toLocaleString()
+                            : "Not available"}
+
+                    </div>
+                `;
+            });
+
+            const averageScore =
+                Math.round(totalScore / activityCount);
+
+            caregiverContent.innerHTML = `
+
+                <div style="
+                    background: #eef3ff;
+                    padding: 20px;
+                    border-radius: 12px;
+                    margin-bottom: 20px;
+                ">
+
+                    <h3>📊 Patient Overview</h3>
+
+                    <p>
+                        Activities completed:
+                        <strong>${activityCount}</strong>
+                    </p>
+
+                    <p>
+                        Average score:
+                        <strong>${averageScore}</strong>
+                    </p>
+
+                    <p>
+                        Successful activities:
+                        <strong>${successfulActivities}</strong>
+                    </p>
+
+                </div>
+
+                <h3>📝 Activity History</h3>
+
+                ${html}
+            `;
+
+        } catch (error) {
+
+            console.error(
+                "Caregiver dashboard error:",
+                error
+            );
+
+            caregiverContent.textContent =
+                "Could not load patient information.";
+        }
+    });
+// ================================
+// MEMORY SEQUENCE ACTIVITY
+// ================================
+
+const activityBtn = document.getElementById("activityBtn");
+const memoryGame = document.getElementById("memoryGame");
+const sequenceElement = document.getElementById("sequence");
+const answerElement = document.getElementById("answer");
+const checkAnswer = document.getElementById("checkAnswer");
+const nextRound = document.getElementById("nextRound");
+const gameResult = document.getElementById("gameResult");
+const gameInstructions = document.getElementById("gameInstructions");
+
+let currentSequence = "";
+let currentLength = 3;
+
+activityBtn.addEventListener("click", () => {
+
+    memoryGame.style.display = "block";
+
+    memoryGame.scrollIntoView({
+        behavior: "smooth"
+    });
+
+    startRound();
+});
+
+function startRound() {
+
+    answerElement.value = "";
+    gameResult.textContent = "";
+
+    checkAnswer.style.display = "inline-block";
+    nextRound.style.display = "none";
+
+    gameInstructions.textContent =
+        "Remember the numbers shown below.";
+
+    currentSequence = "";
+
+    for (let i = 0; i < currentLength; i++) {
+        currentSequence += Math.floor(Math.random() * 10);
+    }
+
+    sequenceElement.textContent = currentSequence;
+
+    setTimeout(() => {
+
+        sequenceElement.textContent = "● ● ●";
+
+        gameInstructions.textContent =
+            "Now enter the numbers you remember.";
+
+    }, 3000);
+}
+
+checkAnswer.addEventListener("click", async () => {
+
+    const userAnswer = answerElement.value.trim();
+
+    if (!userAnswer) {
+        gameResult.textContent =
+            "Please enter your answer.";
+        return;
+    }
+
+    const correct = userAnswer === currentSequence;
+    const score = correct ? 100 : 0;
+
+    if (correct) {
+
+        gameResult.textContent =
+            "✅ Excellent! You remembered correctly.";
+
+        currentLength++;
+
+    } else {
+
+        gameResult.textContent =
+            "That's okay. Let's try again.";
+    }
+
+    // Save the result to Firestore
+    try {
+
+        await addDoc(collection(db, "activityResults"), {
+
+            patientId: "FG36ijukJQ5rqkOT8",
+
+            activityType: "memory_sequence",
+
+            score: score,
+
+            difficulty: currentLength,
+
+            attempts: 1,
+
+            timestamp: serverTimestamp()
+
+        });
+
+        console.log("✅ Activity result saved to Firestore!");
+
+    } catch (error) {
+
+        console.error(
+            "❌ Could not save activity result:",
+            error
+        );
+
+    }
+
+    checkAnswer.style.display = "none";
+    nextRound.style.display = "inline-block";
+});
+
+nextRound.addEventListener("click", () => {
+    startRound();
+});
+
+    </script>
+
+</body>
+</html>
+
