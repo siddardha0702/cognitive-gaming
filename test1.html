@@ -383,6 +383,7 @@ html
     </div>
 
 </section>
+
     <!-- ================================
      CREATE REMINDER
 ================================ -->
@@ -480,6 +481,48 @@ html
             font-weight: bold;
         "
     ></p>
+
+</section>
+<!-- ================================
+     PATIENT PROGRESS
+================================ -->
+
+<section
+    id="progressSection"
+    class="assistant"
+    style="display: none;"
+>
+
+    <h2>📊 My Progress</h2>
+
+    <p>
+        Your cognitive activity performance is shown below.
+    </p>
+
+    <div id="progressContent">
+        Loading progress...
+    </div>
+
+</section>
+<!-- ================================
+     CAREGIVER DASHBOARD
+================================ -->
+
+<section
+    id="caregiverSection"
+    class="assistant"
+    style="display: none;"
+>
+
+    <h2>👨‍👩‍👧 Caregiver Dashboard</h2>
+
+    <p>
+        Monitor the patient's cognitive activity and recent performance.
+    </p>
+
+    <div id="caregiverContent">
+        Loading caregiver dashboard...
+    </div>
 
 </section>
         <section class="assistant">
@@ -678,17 +721,26 @@ if (actualRole === "patient") {
 
 } else if (actualRole === "caregiver") {
 
-    // Caregiver does not need the patient's personal progress section
-    if (progressSection) {
-        progressSection.style.display = "none";
-    }
+    
 
     // Hide cognitive activity from caregiver
-    if (cognitiveActivityCard) {
-        cognitiveActivityCard.style.display = "none";
-    }
+if (cognitiveActivityCard) {
+    cognitiveActivityCard.style.display = "none";
+}
+// Hide Caregiver Area button because
+// caregiver features are already shown directly
+if (caregiverBtn) {
+    caregiverBtn.parentElement.style.display = "none";
+}
+// Show Create Reminder directly for caregiver
+const createReminderSection =
+    document.getElementById("createReminderSection");
 
-    console.log("👨‍👩‍👧 Caregiver view enabled.");
+if (createReminderSection) {
+    createReminderSection.style.display = "block";
+}
+
+console.log("👨‍👩‍👧 Caregiver view enabled.");
 }
 
     } catch (error) {
@@ -1097,22 +1149,101 @@ remindersContent.innerHTML = html;
 // AUTO CHECK REMINDERS
 // ================================
 
+let lastReminderNotification = "";
+
+async function checkDueReminders() {
+
+    try {
+
+        const reminderQuery = query(
+            collection(db, "reminders"),
+            where("patientId", "==", PATIENT_ID)
+        );
+
+        const snapshot =
+            await getDocs(reminderQuery);
+
+        const now = new Date();
+
+        snapshot.forEach((doc) => {
+
+            const reminder = doc.data();
+
+            if (!reminder.date || !reminder.time) {
+                return;
+            }
+
+            const reminderDateTime =
+                new Date(
+                    `${reminder.date}T${reminder.time}`
+                );
+
+            const difference =
+                now - reminderDateTime;
+
+            // Reminder is due within 1 minute after its scheduled time
+            if (
+                difference >= 0 &&
+                difference < 60000
+            ) {
+
+                const notificationId =
+                    `${doc.id}-${reminder.date}-${reminder.time}`;
+
+                // Prevent repeated notifications
+                if (
+                    lastReminderNotification !==
+                    notificationId
+                ) {
+
+                    lastReminderNotification =
+                        notificationId;
+
+                    alert(
+                        `🔔 Reminder\n\n` +
+                        `${reminder.title}\n\n` +
+                        `Type: ${reminder.type || "Reminder"}`
+                    );
+
+                }
+
+            }
+
+        });
+
+    } catch (error) {
+
+        console.error(
+            "Reminder notification error:",
+            error
+        );
+
+    }
+}
+
+
+// Check every 60 seconds
 setInterval(() => {
+
+    checkDueReminders();
 
     const remindersSection =
         document.getElementById("remindersSection");
 
-    // Only refresh if Reminders page is currently open
+    // Refresh the visible reminders page
     if (
         remindersSection &&
         remindersSection.style.display !== "none"
     ) {
+
         document
             .getElementById("reminderBtn")
             .click();
+
     }
 
 }, 60000);
+
 // ================================
 // PROGRESS
 // ================================
@@ -1124,12 +1255,19 @@ setInterval(() => {
     .addEventListener("click", async () => {
 
         const progressSection =
-            document.getElementById("progressSection");
+    document.getElementById("progressSection");
 
-        const progressContent =
-            document.getElementById("progressContent");
+const progressContent =
+    document.getElementById("progressContent");
 
-        progressSection.style.display = "block";
+if (!progressSection || !progressContent) {
+    console.error(
+        "Progress section elements not found."
+    );
+    return;
+}
+
+progressSection.style.display = "block";
 
         progressSection.scrollIntoView({
             behavior: "smooth"
@@ -1242,7 +1380,7 @@ const snapshot = await getDocs(activityQuery);
         }
     });
 
-        // ================================
+       // ================================
 // CAREGIVER DASHBOARD
 // ================================
 
@@ -1253,30 +1391,56 @@ document.getElementById("caregiverBtn")
             document.getElementById("caregiverSection");
 
         const caregiverContent =
-            document.getElementById("caregiverContent");
+    document.getElementById("caregiverContent");
 
-        caregiverSection.style.display = "block";
+if (!caregiverSection || !caregiverContent) {
+    console.error(
+        "Caregiver dashboard elements not found."
+    );
+    return;
+}
 
-        caregiverSection.scrollIntoView({
-            behavior: "smooth"
-        });
+caregiverSection.style.display = "block";
 
-        caregiverContent.textContent =
-            "Loading patient activity...";
+caregiverSection.scrollIntoView({
+    behavior: "smooth"
+});
+
+        caregiverContent.innerHTML = `
+            <div style="
+                text-align: center;
+                padding: 30px;
+                color: #657184;
+            ">
+                Loading patient activity...
+            </div>
+        `;
 
         try {
 
             const activityQuery = query(
-    collection(db, "activityResults"),
-    where("patientId", "==", PATIENT_ID)
-);
+                collection(db, "activityResults"),
+                where("patientId", "==", PATIENT_ID)
+            );
 
-const snapshot = await getDocs(activityQuery);
+            const snapshot =
+                await getDocs(activityQuery);
 
-if (snapshot.empty) {
+            if (snapshot.empty) {
 
-                caregiverContent.textContent =
-                    "No patient activity recorded yet.";
+                caregiverContent.innerHTML = `
+                    <div style="
+                        text-align: center;
+                        padding: 30px;
+                        background: #f4f7fb;
+                        border-radius: 15px;
+                    ">
+                        <h3>📭 No Activity Yet</h3>
+                        <p>
+                            No patient activity has been recorded yet.
+                        </p>
+                    </div>
+                `;
 
                 return;
             }
@@ -1285,91 +1449,257 @@ if (snapshot.empty) {
             let activityCount = 0;
             let successfulActivities = 0;
 
-            let html = "";
+            const activities = [];
 
             snapshot.forEach((doc) => {
 
                 const data = doc.data();
 
-                totalScore += data.score || 0;
+                const score =
+                    Number(data.score) || 0;
+
+                totalScore += score;
                 activityCount++;
 
-                if ((data.score || 0) >= 100) {
+                if (score >= 100) {
                     successfulActivities++;
                 }
 
-                html += `
+                activities.push({
+                    ...data,
+                    score: score
+                });
+
+            });
+
+
+            // Sort newest activity first
+            activities.sort((a, b) => {
+
+                const timeA =
+                    a.timestamp && a.timestamp.toDate
+                        ? a.timestamp.toDate()
+                        : new Date(0);
+
+                const timeB =
+                    b.timestamp && b.timestamp.toDate
+                        ? b.timestamp.toDate()
+                        : new Date(0);
+
+                return timeB - timeA;
+
+            });
+
+
+            const averageScore =
+                Math.round(
+                    totalScore / activityCount
+                );
+
+
+            // ================================
+            // ACTIVITY HISTORY
+            // ================================
+
+            let historyHTML = "";
+
+            activities.forEach((data) => {
+
+                const activityDate =
+                    data.timestamp && data.timestamp.toDate
+                        ? data.timestamp.toDate().toLocaleString()
+                        : "Not available";
+
+                historyHTML += `
                     <div style="
-                        background: #f4f7fb;
-                        padding: 18px;
-                        margin-bottom: 12px;
-                        border-radius: 12px;
+                        background: #ffffff;
+                        border: 1px solid #dce2ea;
+                        padding: 20px;
+                        margin-bottom: 14px;
+                        border-radius: 16px;
+                        box-shadow: 0 4px 12px rgba(0,0,0,0.04);
                     ">
 
-                        <strong>
-                            🧠 ${data.activityType || "Activity"}
-                        </strong>
+                        <div style="
+                            display: flex;
+                            justify-content: space-between;
+                            align-items: center;
+                            gap: 15px;
+                            flex-wrap: wrap;
+                        ">
 
-                        <br><br>
+                            <h3 style="
+                                margin: 0;
+                                font-size: 20px;
+                            ">
+                                🧠 ${data.activityType || "Activity"}
+                            </h3>
 
-                        Score:
-                        <strong>${data.score ?? 0}</strong>
+                            <span style="
+                                background: #eef3ff;
+                                color: #3157d5;
+                                padding: 7px 12px;
+                                border-radius: 20px;
+                                font-weight: bold;
+                            ">
+                                Score: ${data.score}
+                            </span>
 
-                        <br>
+                        </div>
 
-                        Difficulty:
-                        ${data.difficulty ?? "-"}
+                        <div style="
+                            margin-top: 15px;
+                            line-height: 1.8;
+                            color: #526070;
+                        ">
 
-                        <br>
+                            <div>
+                                🎯 <strong>Difficulty:</strong>
+                                ${data.difficulty ?? "-"}
+                            </div>
 
-                        Attempts:
-                        ${data.attempts ?? "-"}
+                            <div>
+                                🔄 <strong>Attempts:</strong>
+                                ${data.attempts ?? "-"}
+                            </div>
 
-                        <br>
+                            <div>
+                                🕒 <strong>Date:</strong>
+                                ${activityDate}
+                            </div>
 
-                        Date:
-                        ${data.timestamp
-                            ? data.timestamp.toDate().toLocaleString()
-                            : "Not available"}
+                        </div>
 
                     </div>
                 `;
+
             });
 
-            const averageScore =
-                Math.round(totalScore / activityCount);
+
+            // ================================
+            // CAREGIVER SUMMARY
+            // ================================
 
             caregiverContent.innerHTML = `
 
                 <div style="
-                    background: #eef3ff;
-                    padding: 20px;
-                    border-radius: 12px;
-                    margin-bottom: 20px;
+                    background: linear-gradient(
+                        135deg,
+                        #eef3ff,
+                        #f7f9ff
+                    );
+                    border: 1px solid #dce2ea;
+                    padding: 25px;
+                    border-radius: 18px;
+                    margin-bottom: 25px;
                 ">
 
-                    <h3>📊 Patient Overview</h3>
+                    <h3 style="
+                        margin-top: 0;
+                        font-size: 24px;
+                    ">
+                        📊 Patient Activity Summary
+                    </h3>
 
-                    <p>
-                        Activities completed:
-                        <strong>${activityCount}</strong>
-                    </p>
+                    <div style="
+                        display: grid;
+                        grid-template-columns:
+                            repeat(
+                                auto-fit,
+                                minmax(150px, 1fr)
+                            );
+                        gap: 15px;
+                        margin-top: 20px;
+                    ">
 
-                    <p>
-                        Average score:
-                        <strong>${averageScore}</strong>
-                    </p>
+                        <div style="
+                            background: white;
+                            padding: 18px;
+                            border-radius: 14px;
+                            text-align: center;
+                        ">
 
-                    <p>
-                        Successful activities:
-                        <strong>${successfulActivities}</strong>
-                    </p>
+                            <div style="font-size: 28px;">
+                                🧠
+                            </div>
+
+                            <strong style="font-size: 24px;">
+                                ${activityCount}
+                            </strong>
+
+                            <p style="
+                                margin: 5px 0 0;
+                                color: #657184;
+                            ">
+                                Activities
+                            </p>
+
+                        </div>
+
+
+                        <div style="
+                            background: white;
+                            padding: 18px;
+                            border-radius: 14px;
+                            text-align: center;
+                        ">
+
+                            <div style="font-size: 28px;">
+                                📈
+                            </div>
+
+                            <strong style="font-size: 24px;">
+                                ${averageScore}
+                            </strong>
+
+                            <p style="
+                                margin: 5px 0 0;
+                                color: #657184;
+                            ">
+                                Average Score
+                            </p>
+
+                        </div>
+
+
+                        <div style="
+                            background: white;
+                            padding: 18px;
+                            border-radius: 14px;
+                            text-align: center;
+                        ">
+
+                            <div style="font-size: 28px;">
+                                ✅
+                            </div>
+
+                            <strong style="font-size: 24px;">
+                                ${successfulActivities}
+                            </strong>
+
+                            <p style="
+                                margin: 5px 0 0;
+                                color: #657184;
+                            ">
+                                Successful
+                            </p>
+
+                        </div>
+
+                    </div>
 
                 </div>
 
-                <h3>📝 Activity History</h3>
 
-                ${html}
+                <h3 style="
+                    font-size: 23px;
+                    margin-bottom: 15px;
+                ">
+                    📝 Recent Activity
+                </h3>
+
+                ${historyHTML}
+
             `;
 
         } catch (error) {
@@ -1379,9 +1709,18 @@ if (snapshot.empty) {
                 error
             );
 
-            caregiverContent.textContent =
-                "Could not load patient information.";
+            caregiverContent.innerHTML = `
+                <div style="
+                    background: #fff4f4;
+                    padding: 20px;
+                    border-radius: 15px;
+                ">
+                    ❌ Could not load patient information.
+                </div>
+            `;
+
         }
+
     });
 // ================================
 // MEMORY SEQUENCE ACTIVITY
