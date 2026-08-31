@@ -1935,6 +1935,188 @@ nextRoutineRound.addEventListener("click", () => {
 
 });
 // ================================
+// PATTERN / OBJECT RECOGNITION
+// ================================
+
+const patternGameBtn =
+    document.getElementById("patternGameBtn");
+
+const patternGame =
+    document.getElementById("patternGame");
+
+const patternDisplay =
+    document.getElementById("patternDisplay");
+
+const patternOptions =
+    document.getElementById("patternOptions");
+
+const patternInstructions =
+    document.getElementById("patternInstructions");
+
+const patternResult =
+    document.getElementById("patternResult");
+
+const nextPatternRound =
+    document.getElementById("nextPatternRound");
+
+let correctPattern = "";
+
+const patterns = [
+    "🔵 ⭐ 🔵 ⭐",
+    "❤️ 🟢 ❤️ 🟢",
+    "🔺 🟡 🔺 🟡",
+    "🌸 🔷 🌸 🔷"
+];
+
+
+// Start a pattern round
+function startPatternRound() {
+
+    patternResult.textContent = "";
+
+    nextPatternRound.style.display = "none";
+
+    patternInstructions.textContent =
+        "Remember the pattern shown below.";
+
+    correctPattern =
+        patterns[
+            Math.floor(Math.random() * patterns.length)
+        ];
+
+    patternDisplay.textContent =
+        correctPattern;
+
+    patternOptions.innerHTML = "";
+
+    setTimeout(() => {
+
+        patternDisplay.textContent =
+            "● ● ● ●";
+
+        patternInstructions.textContent =
+            "Tap the pattern you remember.";
+
+        showPatternOptions();
+
+    }, 7500);
+}
+
+
+// Show pattern choices
+function showPatternOptions() {
+
+    patternOptions.innerHTML = "";
+
+    const options = [
+        correctPattern,
+        ...patterns.filter(
+            pattern => pattern !== correctPattern
+        ).slice(0, 3)
+    ];
+
+    options.sort(() => Math.random() - 0.5);
+
+    options.forEach((pattern) => {
+
+        const button =
+            document.createElement("button");
+
+        button.textContent = pattern;
+
+        button.style.minHeight = "75px";
+        button.style.fontSize = "28px";
+        button.style.letterSpacing = "5px";
+
+        button.addEventListener("click", () => {
+
+            if (pattern === correctPattern) {
+
+                patternResult.textContent =
+                    "✅ Excellent! You remembered the pattern.";
+
+                savePatternResult(100);
+
+            } else {
+
+                patternResult.textContent =
+                    "That's okay. Let's try another one.";
+
+                savePatternResult(0);
+            }
+
+            // Disable all options
+            const buttons =
+                patternOptions.querySelectorAll("button");
+
+            buttons.forEach(button => {
+                button.disabled = true;
+            });
+
+            nextPatternRound.style.display =
+                "inline-block";
+
+        });
+
+        patternOptions.appendChild(button);
+
+    });
+}
+
+
+// Save pattern result
+async function savePatternResult(score) {
+
+    try {
+
+        await addDoc(
+            collection(db, "activityResults"),
+            {
+                patientId: PATIENT_ID,
+                activityType: "pattern_recognition",
+                score: score,
+                difficulty: 4,
+                attempts: 1,
+                timestamp: serverTimestamp()
+            }
+        );
+
+        console.log(
+            "✅ Pattern result saved."
+        );
+
+    } catch (error) {
+
+        console.error(
+            "❌ Could not save pattern result:",
+            error
+        );
+
+    }
+}
+
+
+// Open Pattern Game
+patternGameBtn.addEventListener("click", () => {
+
+    patternGame.style.display = "block";
+
+    patternGame.scrollIntoView({
+        behavior: "smooth"
+    });
+
+    startPatternRound();
+
+});
+
+
+// Next pattern
+nextPatternRound.addEventListener("click", () => {
+
+    startPatternRound();
+
+});
+// ================================
 // SAVE REMINDER
 // ================================
 
