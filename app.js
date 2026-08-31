@@ -2108,6 +2108,81 @@ patternGameBtn.addEventListener("click", () => {
     startPatternRound();
 
 });
+// ================================
+// MOOD CHECK-IN
+// ================================
+
+const moodCheckinBtn =
+    document.getElementById("moodCheckinBtn");
+
+const moodCheckin =
+    document.getElementById("moodCheckin");
+
+const moodOptions =
+    document.querySelectorAll("#moodOptions button");
+
+const moodResult =
+    document.getElementById("moodResult");
+
+
+// Open Mood Check-In
+moodCheckinBtn.addEventListener("click", () => {
+
+    moodCheckin.style.display = "block";
+
+    moodCheckin.scrollIntoView({
+        behavior: "smooth"
+    });
+
+    moodResult.textContent =
+        "";
+
+});
+
+
+// Handle mood selection
+moodOptions.forEach((button) => {
+
+    button.addEventListener("click", async () => {
+
+        const mood =
+            button.dataset.mood;
+
+        moodResult.textContent =
+            "Saving your response...";
+
+        try {
+
+            await addDoc(
+                collection(db, "moodCheckins"),
+                {
+                    patientId: PATIENT_ID,
+                    mood: mood,
+                    timestamp: serverTimestamp()
+                }
+            );
+
+            moodResult.textContent =
+                "💙 Thank you for sharing how you feel.";
+
+            console.log(
+                "✅ Mood check-in saved."
+            );
+
+        } catch (error) {
+
+            console.error(
+                "❌ Could not save mood check-in:",
+                error
+            );
+
+            moodResult.textContent =
+                "Sorry, we could not save your response.";
+        }
+
+    });
+
+});
 
 
 // Next pattern

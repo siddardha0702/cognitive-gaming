@@ -666,6 +666,9 @@ html
 <button id="patternGameBtn" style="margin-top: 10px;">
     🧩 Pattern Recognition
 </button>
+<button id="moodCheckinBtn" style="margin-top: 10px;">
+    😊 Mood Check-In
+</button>
             </div>
 
             <div class="card">
@@ -936,6 +939,64 @@ html
     >
         Next Pattern
     </button>
+
+</section>
+<!-- ================================
+     MOOD CHECK-IN
+================================ -->
+
+<section
+    id="moodCheckin"
+    class="assistant"
+    style="display: none;"
+>
+
+    <h2>😊 How Are You Feeling?</h2>
+
+    <p id="moodInstructions">
+        Choose the option that best describes how you feel today.
+    </p>
+
+    <div
+        id="moodOptions"
+        style="
+            display: grid;
+            grid-template-columns: 1fr;
+            gap: 14px;
+            margin-top: 25px;
+        "
+    >
+
+        <button data-mood="Good">
+            😀 I feel good
+        </button>
+
+        <button data-mood="Okay">
+            🙂 I feel okay
+        </button>
+
+        <button data-mood="Not great">
+            😐 I'm not feeling great
+        </button>
+
+        <button data-mood="Worried">
+            😟 I feel worried
+        </button>
+
+        <button data-mood="Tired">
+            😴 I feel tired
+        </button>
+
+    </div>
+
+    <p
+        id="moodResult"
+        style="
+            margin-top: 20px;
+            font-size: 20px;
+            font-weight: bold;
+        "
+    ></p>
 
 </section>
 <!-- ================================
