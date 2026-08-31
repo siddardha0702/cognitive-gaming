@@ -1358,8 +1358,8 @@ const gameInstructions = document.getElementById("gameInstructions");
 let currentSequence = "";
 let currentLength = 3;
 
-const MIN_DIFFICULTY = 3;
-const MAX_DIFFICULTY = 8;
+const MIN_DIFFICULTY = 2;
+const MAX_DIFFICULTY = 6;
 
 async function updateDifficulty() {
 
@@ -1499,7 +1499,7 @@ checkAnswer.addEventListener("click", async () => {
 
         await addDoc(collection(db, "activityResults"), {
 
-            patientId: "FG36ijukJQ5rqkOT8",
+            patientId: PATIENT_ID ,
 
             activityType: "memory_sequence",
 
