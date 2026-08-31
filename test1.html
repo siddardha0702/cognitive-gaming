@@ -660,6 +660,9 @@ html
                 <button id="attentionBtn" style="margin-top: 10px;">
     🎯 Attention Challenge
 </button>
+<button id="routineRecallBtn" style="margin-top: 10px;">
+    🔢 Daily Routine Recall
+</button>
             </div>
 
             <div class="card">
@@ -783,6 +786,96 @@ html
             font-weight: bold;
         "
     ></p>
+
+</section>
+<!-- ================================
+     DAILY ROUTINE RECALL
+================================ -->
+
+<section
+    id="routineRecallGame"
+    class="assistant"
+    style="display: none;"
+>
+
+    <h2>🔢 Daily Routine Recall</h2>
+
+    <p id="routineInstructions">
+        Remember the activities in the order shown.
+    </p>
+    <div
+    id="routineTimeOptions"
+    style="
+        display: grid;
+        grid-template-columns: repeat(3, 1fr);
+        gap: 14px;
+        margin: 25px 0;
+    "
+>
+    <button id="morningRoutineBtn">
+        🌅 Morning
+    </button>
+
+    <button id="afternoonRoutineBtn">
+        ☀️ Afternoon
+    </button>
+
+    <button id="eveningRoutineBtn">
+        🌙 Evening
+    </button>
+</div>
+
+    <!-- Routine shown during memory phase -->
+    <div
+        id="routineSequence"
+        style="
+            background: #eef3ff;
+            border: 1px solid #cbd9ef;
+            border-radius: 14px;
+            padding: 20px;
+            margin: 25px 0;
+            font-size: 22px;
+            font-weight: bold;
+            line-height: 1.8;
+            text-align: center;
+        "
+    ></div>
+
+    <!-- Options for recall -->
+    <div
+        id="routineOptions"
+        style="
+            display: grid;
+            grid-template-columns: 1fr;
+            gap: 14px;
+            margin-top: 20px;
+        "
+    ></div>
+
+    <p
+        id="routineProgress"
+        style="
+            margin-top: 20px;
+            font-size: 18px;
+            font-weight: bold;
+        "
+    ></p>
+
+    <p
+        id="routineResult"
+        style="
+            margin-top: 20px;
+            font-size: 20px;
+            font-weight: bold;
+        "
+    ></p>
+
+    <button
+        id="nextRoutineRound"
+        style="display: none;"
+    >
+        Next Round
+    </button>
 
 </section>
 <!-- ================================

@@ -462,6 +462,7 @@ document
         remindersSection.scrollIntoView({
             behavior: "smooth"
         });
+        routineTimeOptions.style.display = "grid";
 
         remindersContent.innerHTML =
             "Loading reminders...";
@@ -1621,6 +1622,316 @@ attentionBtn.addEventListener("click", () => {
 startAttentionGame.addEventListener("click", () => {
 
     createAttentionGame();
+
+});
+// ================================
+// DAILY ROUTINE RECALL GAME
+// ================================
+
+const routineRecallBtn =
+    document.getElementById("routineRecallBtn");
+    const morningRoutineBtn =
+    document.getElementById("morningRoutineBtn");
+
+const afternoonRoutineBtn =
+    document.getElementById("afternoonRoutineBtn");
+
+const eveningRoutineBtn =
+    document.getElementById("eveningRoutineBtn");
+
+const routineTimeOptions =
+    document.getElementById("routineTimeOptions");
+
+const routineRecallGame =
+    document.getElementById("routineRecallGame");
+
+const routineSequence =
+    document.getElementById("routineSequence");
+
+const routineOptions =
+    document.getElementById("routineOptions");
+
+const nextRoutineRound =
+    document.getElementById("nextRoutineRound");
+
+const routineResult =
+    document.getElementById("routineResult");
+
+const routineInstructions =
+    document.getElementById("routineInstructions");
+
+const routineProgress =
+    document.getElementById("routineProgress");
+
+const dailyRoutines = {
+    morning: [
+        "🌅 Wake up",
+        "🪥 Brush teeth",
+        "🍳 Have breakfast",
+        "💊 Take medicine"
+    ],
+
+    afternoon: [
+        "🍛 Have lunch",
+        "💧 Drink water",
+        "🚶 Go for a walk",
+        "😴 Take a short rest"
+    ],
+
+    evening: [
+        "☕ Have evening snack",
+        "💧 Drink water",
+        "📺 Relax",
+        "🍽️ Have dinner"
+    ]
+};
+
+let currentRoutine = [];
+let routineCurrentStep = 0;
+let routineScore = 0;
+let currentRoutineTime = null;
+
+
+// Start a new round
+function startRoutineRound(timeOfDay) {
+
+    routineCurrentStep = 0;
+    routineScore = 0;
+
+    routineResult.textContent = "";
+    routineProgress.textContent = "";
+
+    nextRoutineRound.style.display = "none";
+
+    currentRoutine = [...dailyRoutines[timeOfDay]];
+
+    routineInstructions.textContent =
+        "Remember this routine in the correct order.";
+
+    routineSequence.textContent =
+        currentRoutine.join(" → ");
+
+    routineOptions.innerHTML = "";
+
+    setTimeout(() => {
+
+        routineSequence.textContent =
+            "● ● ● ●";
+
+        routineInstructions.textContent =
+            "Tap the activities in the order you remember.";
+
+        showRoutineOptions();
+
+    }, 10000);
+}
+
+
+// Show large activity buttons
+function showRoutineOptions() {
+
+    routineOptions.innerHTML = "";
+
+    const shuffledOptions =
+        [...currentRoutine]
+            .sort(() => Math.random() - 0.5);
+
+    shuffledOptions.forEach((activity) => {
+
+        const button =
+            document.createElement("button");
+
+        button.textContent = activity;
+
+        button.style.minHeight = "65px";
+        button.style.fontSize = "20px";
+        button.style.textAlign = "left";
+        button.style.padding = "15px 20px";
+
+        button.addEventListener("click", () => {
+
+            handleRoutineSelection(
+                activity,
+                button
+            );
+
+        });
+
+        routineOptions.appendChild(button);
+
+    });
+
+    updateRoutineProgress();
+}
+
+
+// Handle patient's selection
+function handleRoutineSelection(
+    selectedActivity,
+    selectedButton
+) {
+
+    const correctActivity =
+        currentRoutine[routineCurrentStep];
+
+    if (selectedActivity === correctActivity) {
+
+        routineScore += 20;
+
+        selectedButton.disabled = true;
+
+        selectedButton.textContent =
+            "✅ " + selectedActivity;
+
+        routineCurrentStep++;
+
+        updateRoutineProgress();
+
+        // Completed the whole routine
+        if (
+            routineCurrentStep ===
+            currentRoutine.length
+        ) {
+
+            routineResult.textContent =
+                "🎉 Excellent! You remembered the whole routine.";
+
+            routineInstructions.textContent =
+                "Great job!";
+
+            saveRoutineResult();
+
+            nextRoutineRound.style.display =
+                "inline-block";
+
+            return;
+        }
+
+        routineInstructions.textContent =
+            "✅ Correct! Now find the next activity.";
+
+    } else {
+
+        routineResult.textContent =
+            "That's okay! Try to remember the order.";
+
+        selectedButton.disabled = true;
+
+        selectedButton.textContent =
+            "❌ " + selectedActivity;
+
+        // Small penalty
+        routineScore =
+            Math.max(0, routineScore - 5);
+    }
+}
+
+
+// Update progress text
+function updateRoutineProgress() {
+
+    routineProgress.textContent =
+        `Activity ${routineCurrentStep + 1} of ${currentRoutine.length}`;
+}
+
+
+// Save result to Firestore
+async function saveRoutineResult() {
+
+    try {
+
+        await addDoc(
+            collection(db, "activityResults"),
+            {
+                patientId: PATIENT_ID,
+                activityType: "routine_recall",
+                score: routineScore,
+                difficulty: currentRoutine.length,
+                attempts: 1,
+                timestamp: serverTimestamp()
+            }
+        );
+
+        console.log(
+            "✅ Routine recall result saved."
+        );
+
+    } catch (error) {
+
+        console.error(
+            "❌ Could not save routine recall result:",
+            error
+        );
+
+    }
+}
+
+routineRecallBtn.addEventListener("click", () => {
+
+    routineRecallGame.style.display = "block";
+
+    routineRecallGame.scrollIntoView({
+        behavior: "smooth"
+    });
+
+    routineInstructions.textContent =
+        "Choose Morning, Afternoon, or Evening.";
+
+    routineSequence.textContent = "";
+
+    routineOptions.innerHTML = "";
+
+    routineResult.textContent = "";
+
+    routineProgress.textContent = "";
+
+    nextRoutineRound.style.display = "none";
+
+});
+morningRoutineBtn.addEventListener("click", () => {
+
+    routineTimeOptions.style.display = "none";
+
+    currentRoutineTime = "morning";
+
+    routineInstructions.textContent =
+        "🌅 Morning Routine — Remember the order.";
+
+    startRoutineRound("morning");
+
+});
+
+
+afternoonRoutineBtn.addEventListener("click", () => {
+
+    routineTimeOptions.style.display = "none";
+
+    currentRoutineTime = "afternoon";
+
+    routineInstructions.textContent =
+        "☀️ Afternoon Routine — Remember the order.";
+
+    startRoutineRound("afternoon");
+
+});
+
+
+eveningRoutineBtn.addEventListener("click", () => {
+
+    routineTimeOptions.style.display = "none";
+
+    currentRoutineTime = "evening";
+
+    routineInstructions.textContent =
+        "🌙 Evening Routine — Remember the order.";
+
+    startRoutineRound("evening");
+
+});
+
+nextRoutineRound.addEventListener("click", () => {
+
+    startRoutineRound(currentRoutineTime);
 
 });
 // ================================
