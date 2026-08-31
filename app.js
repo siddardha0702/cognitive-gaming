@@ -1531,6 +1531,99 @@ nextRound.addEventListener("click", () => {
     startRound();
 });
 // ================================
+// ATTENTION / CONCENTRATION GAME
+// ================================
+
+const attentionBtn = document.getElementById("attentionBtn");
+const attentionGame = document.getElementById("attentionGame");
+const attentionGrid = document.getElementById("attentionGrid");
+const startAttentionGame =
+    document.getElementById("startAttentionGame");
+const attentionResult =
+    document.getElementById("attentionResult");
+const attentionInstructions =
+    document.getElementById("attentionInstructions");
+
+let attentionCorrectAnswer = null;
+
+function createAttentionGame() {
+
+    attentionGrid.innerHTML = "";
+    attentionResult.textContent = "";
+
+    attentionInstructions.textContent =
+        "Find the number that appears only once.";
+
+    const normalNumber =
+        Math.floor(Math.random() * 9) + 1;
+
+    let differentNumber;
+
+    do {
+        differentNumber =
+            Math.floor(Math.random() * 9) + 1;
+    } while (differentNumber === normalNumber);
+
+    const differentPosition =
+        Math.floor(Math.random() * 16);
+
+    attentionCorrectAnswer = differentPosition;
+
+    for (let i = 0; i < 16; i++) {
+
+        const button = document.createElement("button");
+
+        button.textContent =
+            i === differentPosition
+                ? differentNumber
+                : normalNumber;
+
+        button.dataset.position = i;
+
+        button.style.minHeight = "70px";
+        button.style.fontSize = "28px";
+
+        button.addEventListener("click", () => {
+
+            if (Number(button.dataset.position) ===
+                attentionCorrectAnswer) {
+
+                attentionResult.textContent =
+                    "✅ Excellent! You found it.";
+
+            } else {
+
+                attentionResult.textContent =
+                    "That's okay. Try again!";
+            }
+
+        });
+
+        attentionGrid.appendChild(button);
+    }
+}
+
+
+// Open Attention Game
+attentionBtn.addEventListener("click", () => {
+
+    attentionGame.style.display = "block";
+
+    attentionGame.scrollIntoView({
+        behavior: "smooth"
+    });
+
+    createAttentionGame();
+});
+
+
+// Start / restart game
+startAttentionGame.addEventListener("click", () => {
+
+    createAttentionGame();
+
+});
+// ================================
 // SAVE REMINDER
 // ================================
 

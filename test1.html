@@ -657,6 +657,9 @@ html
                 <button id="activityBtn">
                     Start Activity
                 </button>
+                <button id="attentionBtn" style="margin-top: 10px;">
+    🎯 Attention Challenge
+</button>
             </div>
 
             <div class="card">
@@ -740,6 +743,46 @@ html
             font-weight: bold;
          ">
     </div>
+
+</section>
+<!-- ================================
+     ATTENTION / CONCENTRATION GAME
+================================ -->
+
+<section
+    id="attentionGame"
+    class="assistant"
+    style="display: none;"
+>
+
+    <h2>🎯 Attention Challenge</h2>
+
+    <p id="attentionInstructions">
+        Find the number that is different from the others.
+    </p>
+
+    <div
+        id="attentionGrid"
+        style="
+            display: grid;
+            grid-template-columns: repeat(4, 1fr);
+            gap: 12px;
+            margin: 25px 0;
+        "
+    ></div>
+
+    <button id="startAttentionGame">
+        Start Attention Game
+    </button>
+
+    <p
+        id="attentionResult"
+        style="
+            margin-top: 20px;
+            font-size: 20px;
+            font-weight: bold;
+        "
+    ></p>
 
 </section>
 <!-- ================================
