@@ -1,0 +1,561 @@
+:root {
+        --bg: #eef3f8;
+        --card: #ffffff;
+        --navy: #172033;
+        --text: #26354a;
+        --secondary: #526070;
+        --border: #d5dee9;
+        --blue: #2458c6;
+        --blue-dark: #1d469e;
+        --blue-light: #eaf1ff;
+        --green: #237a4b;
+        --green-light: #e8f6ee;
+        --amber: #8a6100;
+        --amber-light: #fff4d6;
+        --shadow: 0 4px 16px rgba(23, 32, 51, 0.07);
+        --radius: 18px;
+    }
+
+    * {
+        box-sizing: border-box;
+    }
+
+    body {
+        margin: 0;
+        font-family: Arial, sans-serif;
+        background: var(--bg);
+        color: var(--navy);
+        font-size: 18px;
+        line-height: 1.6;
+    }
+
+    /* =========================
+       HEADER
+       ========================= */
+
+    header {
+        background: var(--card);
+        padding: 30px 7%;
+        border-bottom: 1px solid var(--border);
+        box-shadow: 0 2px 12px rgba(23, 32, 51, 0.05);
+    }
+
+    header h1 {
+        margin: 0;
+        font-size: 34px;
+        font-weight: 700;
+        line-height: 1.2;
+    }
+
+    header p {
+        margin: 10px 0 0;
+        font-size: 18px;
+        color: var(--secondary);
+        line-height: 1.5;
+    }
+
+    /* =========================
+       MAIN LAYOUT
+       ========================= */
+
+    main {
+        width: 90%;
+        max-width: 1180px;
+        margin: 42px auto 56px;
+    }
+
+    /* =========================
+       WELCOME SECTION
+       ========================= */
+
+    .welcome {
+        background: var(--card);
+        padding: 34px;
+        border-radius: 22px;
+        margin-bottom: 30px;
+        border: 1px solid var(--border);
+        box-shadow: var(--shadow);
+    }
+
+    .welcome h2 {
+        margin: 0 0 12px;
+        font-size: 30px;
+        line-height: 1.3;
+    }
+
+    .welcome p {
+        margin: 0;
+        font-size: 18px;
+        line-height: 1.6;
+        color: var(--text);
+    }
+
+    /* =========================
+       DASHBOARD CARDS
+       ========================= */
+
+    .cards {
+        display: grid;
+        grid-template-columns: repeat(2, minmax(0, 1fr));
+        gap: 24px;
+    }
+
+    .card {
+        background: var(--card);
+        border-radius: var(--radius);
+        padding: 30px;
+        border: 1px solid var(--border);
+        box-shadow: var(--shadow);
+        min-height: 230px;
+
+        display: flex;
+        flex-direction: column;
+    }
+
+    .card h3 {
+        margin: 0 0 12px;
+        font-size: 22px;
+        line-height: 1.35;
+        color: var(--navy);
+    }
+
+    .card p {
+        margin: 0 0 24px;
+        font-size: 18px;
+        line-height: 1.6;
+        color: var(--secondary);
+        flex: 1;
+    }
+
+    /* Different sections have subtle healthcare accents */
+
+    #cognitiveActivityCard {
+        border-top: 5px solid #4d78d8;
+    }
+
+    #cognitiveActivityCard + .card {
+        border-top: 5px solid var(--green);
+    }
+
+    #cognitiveActivityCard + .card + .card {
+        border-top: 5px solid #6882b5;
+    }
+
+    #cognitiveActivityCard + .card + .card + .card {
+        border-top: 5px solid #7a8a9f;
+    }
+
+    /* =========================
+       BUTTONS
+       ========================= */
+
+    button {
+        min-height: 54px;
+        padding: 14px 24px;
+
+        border: none;
+        border-radius: 12px;
+
+        font-family: inherit;
+        font-size: 18px;
+        font-weight: 700;
+
+        cursor: pointer;
+
+        background: var(--blue);
+        color: #ffffff;
+
+        box-shadow: 0 3px 8px rgba(36, 88, 198, 0.20);
+    }
+
+    button:hover {
+        background: var(--blue-dark);
+    }
+
+    button:focus-visible {
+        outline: 3px solid rgba(36, 88, 198, 0.25);
+        outline-offset: 3px;
+    }
+
+    /* =========================
+       GENERAL SECTIONS
+       ========================= */
+
+    .assistant {
+        margin-top: 30px;
+        background: var(--card);
+        border-radius: 20px;
+        padding: 32px;
+        border: 1px solid var(--border);
+        box-shadow: var(--shadow);
+    }
+
+    .assistant h2 {
+        margin: 0 0 12px;
+        font-size: 28px;
+        line-height: 1.3;
+    }
+
+    .assistant > p {
+        margin: 0 0 20px;
+        font-size: 18px;
+        color: var(--text);
+        line-height: 1.6;
+    }
+
+    /* =========================
+       INPUTS
+       ========================= */
+
+    input,
+    textarea {
+        font-family: inherit;
+        color: var(--navy);
+    }
+
+    input:not([type="hidden"]) {
+        min-height: 54px;
+    }
+
+    input::placeholder,
+    textarea::placeholder {
+        color: #66758a;
+    }
+
+    textarea {
+        width: 100%;
+        min-height: 130px;
+        padding: 16px;
+
+        font-size: 18px;
+        line-height: 1.55;
+
+        border: 1px solid #b9c7d8;
+        border-radius: 12px;
+
+        background: #ffffff;
+        color: var(--navy);
+
+        resize: vertical;
+        outline: none;
+    }
+
+    textarea:focus,
+    input:focus {
+        border-color: var(--blue);
+        outline: 3px solid rgba(36, 88, 198, 0.15);
+    }
+
+    /* =========================
+       LOGIN
+       ========================= */
+
+    #loginSection {
+        width: min(92%, 620px);
+        margin: 8vh auto 0;
+        padding: 36px;
+
+        background: var(--card);
+        border-top: 5px solid var(--blue);
+        border-radius: 20px;
+        box-shadow: var(--shadow);
+    }
+
+    #loginSection h2 {
+        font-size: 30px;
+        margin-top: 0;
+    }
+
+    #loginSection input {
+        width: 100% !important;
+        min-height: 54px;
+        padding: 15px 16px !important;
+
+        font-size: 18px !important;
+
+        border: 1px solid #b9c7d8 !important;
+        border-radius: 12px !important;
+
+        background: #ffffff !important;
+        color: var(--navy) !important;
+    }
+
+    /* =========================
+       MEMORY SEQUENCE
+       ========================= */
+
+    #memoryGame {
+        border-top: 5px solid #4d78d8;
+    }
+
+    #sequence {
+        min-height: 80px;
+
+        display: flex;
+        align-items: center;
+        justify-content: center;
+
+        background: var(--blue-light);
+        border: 1px solid #cbd9ef;
+        border-radius: 14px;
+
+        padding: 20px;
+
+        font-size: 42px !important;
+        font-weight: 700;
+        letter-spacing: 12px !important;
+
+        color: var(--navy);
+    }
+
+    #answer {
+        width: 100% !important;
+        min-height: 56px;
+
+        padding: 15px 16px !important;
+
+        font-size: 20px !important;
+
+        border: 1px solid #b9c7d8 !important;
+        border-radius: 12px !important;
+
+        background: #ffffff !important;
+    }
+
+    #gameResult {
+        margin-top: 20px;
+        padding: 14px 16px;
+
+        background: var(--surface-soft, #f7f9fc);
+        border-radius: 12px;
+
+        font-size: 20px;
+        font-weight: 700;
+    }
+
+    /* =========================
+       REMINDERS
+       ========================= */
+
+    #remindersSection {
+        border-top: 5px solid var(--green);
+    }
+
+    #remindersContent > div {
+        background: #ffffff !important;
+        border: 1px solid var(--border) !important;
+        border-left: 5px solid var(--green) !important;
+        border-radius: 14px !important;
+
+        padding: 22px !important;
+
+        box-shadow: 0 3px 12px rgba(23, 32, 51, 0.05) !important;
+    }
+
+    /* =========================
+       CREATE REMINDER
+       ========================= */
+
+    #createReminderSection {
+        border-top: 5px solid #d19a24;
+    }
+
+    #createReminderSection input {
+        width: 100% !important;
+        min-height: 54px;
+
+        padding: 15px 16px !important;
+
+        font-size: 18px !important;
+
+        border: 1px solid #b9c7d8 !important;
+        border-radius: 12px !important;
+
+        background: #ffffff !important;
+        color: var(--navy) !important;
+    }
+
+    #createReminderSection label {
+        display: block;
+        margin-top: 14px;
+        margin-bottom: 6px;
+
+        font-size: 17px;
+        font-weight: 700;
+        color: var(--navy);
+    }
+
+    #caregiverRemindersContent > div {
+        background: #f7f9fc !important;
+        border: 1px solid var(--border) !important;
+        border-radius: 14px !important;
+        padding: 20px !important;
+    }
+
+    /* Delete reminder button */
+    #caregiverRemindersContent .deleteReminderBtn {
+        min-height: 50px;
+        background: #b42318 !important;
+        color: #ffffff !important;
+    }
+
+    #caregiverRemindersContent .deleteReminderBtn:hover {
+        background: #8f1c13 !important;
+    }
+
+    /* =========================
+       PROGRESS
+       ========================= */
+
+    #progressSection {
+        border-top: 5px solid #6882b5;
+    }
+
+    #progressContent > div {
+        border: 1px solid var(--border) !important;
+        border-radius: 14px !important;
+    }
+
+    /* =========================
+       CAREGIVER DASHBOARD
+       ========================= */
+
+    #caregiverSection {
+        border-top: 5px solid #7a8a9f;
+    }
+
+    #caregiverContent > div {
+        border-radius: 14px !important;
+    }
+
+    /* =========================
+       GEMINI ASSISTANT
+       ========================= */
+
+    #response {
+        margin-top: 20px;
+        padding: 22px;
+
+        min-height: 72px;
+
+        background: #f7f9fc;
+        border: 1px solid var(--border);
+        border-radius: 14px;
+
+        font-size: 18px;
+        line-height: 1.6;
+
+        color: var(--navy);
+
+        white-space: pre-wrap;
+    }
+
+    /* =========================
+       FOOTER
+       ========================= */
+
+    footer {
+        text-align: center;
+
+        padding: 36px 20px;
+
+        color: #657184;
+        font-size: 16px;
+        line-height: 1.5;
+
+        border-top: 1px solid var(--border);
+        background: #f8fafc;
+    }
+
+    /* =========================
+       TABLET
+       ========================= */
+
+    @media (max-width: 800px) {
+
+        header {
+            padding: 24px 6%;
+        }
+
+        main {
+            width: 92%;
+            margin: 30px auto 45px;
+        }
+
+        .cards {
+            grid-template-columns: 1fr;
+            gap: 18px;
+        }
+
+        .welcome,
+        .assistant {
+            padding: 26px;
+        }
+
+        button {
+            width: 100%;
+            min-height: 54px;
+            margin-left: 0 !important;
+            margin-bottom: 10px;
+        }
+
+        #remindersSection > div:first-child {
+            flex-direction: column;
+            align-items: flex-start !important;
+        }
+    }
+
+    /* =========================
+       MOBILE
+       ========================= */
+
+    @media (max-width: 520px) {
+
+        header h1 {
+            font-size: 30px;
+        }
+
+        header p {
+            font-size: 17px;
+        }
+
+        .welcome h2,
+        .assistant h2 {
+            font-size: 25px;
+        }
+
+        .welcome p,
+        .assistant > p,
+        .card p {
+            font-size: 18px;
+        }
+
+        .card h3 {
+            font-size: 21px;
+        }
+
+        .welcome,
+        .assistant,
+        #loginSection {
+            padding: 22px;
+            border-radius: 16px;
+        }
+
+        #sequence {
+            font-size: 34px !important;
+            letter-spacing: 8px !important;
+        }
+    }
+
+    /* =========================
+       REDUCED MOTION
+       ========================= */
+
+    @media (prefers-reduced-motion: reduce) {
+        *,
+        *::before,
+        *::after {
+            transition: none !important;
+            animation: none !important;
+        }
+    }
