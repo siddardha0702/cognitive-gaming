@@ -357,7 +357,16 @@ if (caregiverAreaButton) {
             createReminderSection.style.display = "block";
         }
 
-        console.log("🔔 Create Reminder opened.");
+        // Defensive: ensure dashboard data loads if this
+        // legacy entry point is ever clicked.
+        if (typeof loadCaregiverDashboard === "function") {
+            loadCaregiverDashboard();
+        }
+        if (typeof loadCaregiverReminders === "function") {
+            loadCaregiverReminders();
+        }
+
+        console.log("🔔 Caregiver dashboard / reminders opened.");
 
     });
 
@@ -939,409 +948,624 @@ const snapshot = await getDocs(activityQuery);
        // ================================
 // CAREGIVER DASHBOARD
 // ================================
-
-async function loadCaregiverDashboard() {
-
-        const caregiverSection =
-            document.getElementById("caregiverSection");
-
-        const caregiverContent =
-    document.getElementById("caregiverContent");
-
-if (!caregiverSection || !caregiverContent) {
-    console.error(
-        "Caregiver dashboard elements not found."
-    );
-    return;
-}
-
-caregiverSection.style.display = "block";
-
-caregiverSection.scrollIntoView({
-    behavior: "smooth"
-});
-
-        caregiverContent.innerHTML = `
-            <div style="
-                text-align: center;
-                padding: 30px;
-                color: #657184;
-            ">
-                Loading patient activity...
-            </div>
-        `;
-
-        try {
-
-            const activityQuery = query(
-                collection(db, "activityResults"),
-                where("patientId", "==", PATIENT_ID)
-            );
-
-            const snapshot =
-                await getDocs(activityQuery);
-
-            if (snapshot.empty) {
-
-                caregiverContent.innerHTML = `
-                    <div style="
-                        text-align: center;
-                        padding: 30px;
-                        background: #f4f7fb;
-                        border-radius: 15px;
-                    ">
-                        <h3>📭 No Activity Yet</h3>
-                        <p>
-                            No patient activity has been recorded yet.
-                        </p>
-                    </div>
-                `;
-
-                return;
-            }
-
-            let totalScore = 0;
-let activityCount = 0;
-let successfulActivities = 0;
-let bestScore = 0;
-
-            const activities = [];
-
-            snapshot.forEach((doc) => {
-
-                const data = doc.data();
-
-                const score =
-                    Number(data.score) || 0;
-                totalScore += score;
-activityCount++;
-
-if (score > bestScore) {
-    bestScore = score;
-}
-
-if (score >= 100) {
-    successfulActivities++;
-}
-
-                activities.push({
-                    ...data,
-                    score: score
-                });
-
-            });
-
-
-            // Sort newest activity first
-            activities.sort((a, b) => {
-
-                const timeA =
-                    a.timestamp && a.timestamp.toDate
-                        ? a.timestamp.toDate()
-                        : new Date(0);
-
-                const timeB =
-                    b.timestamp && b.timestamp.toDate
-                        ? b.timestamp.toDate()
-                        : new Date(0);
-
-                return timeB - timeA;
-
-            });
-
-
-            const averageScore =
-                Math.round(
-                    totalScore / activityCount
-                );
-                const latestActivity =
-    activities[0];
-
-const latestActivityName =
-    latestActivity.activityType || "Activity";
-
-const latestActivityDate =
-    latestActivity.timestamp &&
-    latestActivity.timestamp.toDate
-        ? latestActivity.timestamp.toDate().toLocaleString()
-        : "Not available";
-
-
-            // ================================
-            // ACTIVITY HISTORY
-            // ================================
-
-            let historyHTML = "";
-
-            activities.forEach((data) => {
-
-                const activityDate =
-                    data.timestamp && data.timestamp.toDate
-                        ? data.timestamp.toDate().toLocaleString()
-                        : "Not available";
-
-                historyHTML += `
-                    <div style="
-                        background: #ffffff;
-                        border: 1px solid #dce2ea;
-                        padding: 20px;
-                        margin-bottom: 14px;
-                        border-radius: 16px;
-                        box-shadow: 0 4px 12px rgba(0,0,0,0.04);
-                    ">
-
-                        <div style="
-                            display: flex;
-                            justify-content: space-between;
-                            align-items: center;
-                            gap: 15px;
-                            flex-wrap: wrap;
-                        ">
-
-                            <h3 style="
-                                margin: 0;
-                                font-size: 20px;
-                            ">
-                                🧠 ${data.activityType || "Activity"}
-                            </h3>
-
-                            <span style="
-                                background: #eef3ff;
-                                color: #3157d5;
-                                padding: 7px 12px;
-                                border-radius: 20px;
-                                font-weight: bold;
-                            ">
-                                Score: ${data.score}
-                            </span>
-
-                        </div>
-
-                        <div style="
-                            margin-top: 15px;
-                            line-height: 1.8;
-                            color: #526070;
-                        ">
-
-                            <div>
-                                🎯 <strong>Difficulty:</strong>
-                                ${data.difficulty ?? "-"}
-                            </div>
-
-                            <div>
-                                🔄 <strong>Attempts:</strong>
-                                ${data.attempts ?? "-"}
-                            </div>
-
-                            <div>
-                                🕒 <strong>Date:</strong>
-                                ${activityDate}
-                            </div>
-
-                        </div>
-
-                    </div>
-                `;
-
-            });
-
-
-            // ================================
-            // CAREGIVER SUMMARY
-            // ================================
-
-            caregiverContent.innerHTML = `
-
-                <div style="
-                    background: linear-gradient(
-                        135deg,
-                        #eef3ff,
-                        #f7f9ff
-                    );
-                    border: 1px solid #dce2ea;
-                    padding: 25px;
-                    border-radius: 18px;
-                    margin-bottom: 25px;
-                ">
-
-                    <h3 style="
-                        margin-top: 0;
-                        font-size: 24px;
-                    ">
-                        📊 Patient Activity Summary
-                    </h3>
-
-                    <div style="
-                        display: grid;
-                        grid-template-columns:
-                            repeat(
-                                auto-fit,
-                                minmax(150px, 1fr)
-                            );
-                        gap: 15px;
-                        margin-top: 20px;
-                    ">
-
-                        <div style="
-                            background: white;
-                            padding: 18px;
-                            border-radius: 14px;
-                            text-align: center;
-                        ">
-
-                            <div style="font-size: 28px;">
-                                🧠
-                            </div>
-
-                            <strong style="font-size: 24px;">
-                                ${activityCount}
-                            </strong>
-
-                            <p style="
-                                margin: 5px 0 0;
-                                color: #657184;
-                            ">
-                                Activities
-                            </p>
-
-                        </div>
-
-
-                        <div style="
-                            background: white;
-                            padding: 18px;
-                            border-radius: 14px;
-                            text-align: center;
-                        ">
-
-                            <div style="font-size: 28px;">
-                                📈
-                            </div>
-
-                            <strong style="font-size: 24px;">
-                                ${averageScore}
-                            </strong>
-
-                            <p style="
-                                margin: 5px 0 0;
-                                color: #657184;
-                            ">
-                                Average Score
-                            </p>
-
-                        </div>
-                        <div style="
-    background: white;
-    padding: 18px;
-    border-radius: 14px;
-    text-align: center;
-">
-
-    <div style="font-size: 28px;">
-        🏆
-    </div>
-
-    <strong style="font-size: 24px;">
-        ${bestScore}
-    </strong>
-
-    <p style="
-        margin: 5px 0 0;
-        color: #657184;
-    ">
-        Best Score
-    </p>
-
-</div>
-
-
-                        <div style="
-                            background: white;
-                            padding: 18px;
-                            border-radius: 14px;
-                            text-align: center;
-                        ">
-
-                            <div style="font-size: 28px;">
-                                ✅
-                            </div>
-
-                            <strong style="font-size: 24px;">
-                                ${successfulActivities}
-                            </strong>
-
-                            <p style="
-                                margin: 5px 0 0;
-                                color: #657184;
-                            ">
-                                Successful
-                            </p>
-
-                        </div>
-
-                    </div>
-
-                </div>
-                <div style="
-    background: white;
-    padding: 18px;
-    border-radius: 14px;
-    margin-top: 15px;
-">
-
-    <strong>
-        🕒 Latest Activity
-    </strong>
-
-    <p style="
-        margin: 8px 0 0;
-        color: #526070;
-    ">
-        ${latestActivityName}
-    </p>
-
-    <p style="
-        margin: 5px 0 0;
-        color: #657184;
-        font-size: 14px;
-    ">
-        ${latestActivityDate}
-    </p>
-
-</div>
-
-
-                <h3 style="
-                    font-size: 23px;
-                    margin-bottom: 15px;
-                ">
-                    📝 Recent Activity
-                </h3>
-
-                ${historyHTML}
-
-            `;
-
-        } catch (error) {
-
-            console.error(
-                "Caregiver dashboard error:",
-                error
-            );
-
-            caregiverContent.innerHTML = `
-                <div style="
-                    background: #fff4f4;
-                    padding: 20px;
-                    border-radius: 15px;
-                ">
-                    ❌ Could not load patient information.
-                </div>
-            `;
-
+//
+// Structure note:
+// The dashboard is rendered into seven semantic HTML containers
+// (defined in index.html #caregiverSection):
+//   #caregiverPatientIdentity  – patient info card
+//   #caregiverSummary          – 4 stat cards
+//   #caregiverLatestActivity   – single latest-activity card
+//   #caregiverRecentActivities – list, newest first (limit 10)
+//   #caregiverRemindersSlot    – reminders slot (X2/X3 plug in here)
+//   #caregiverAlerts           – caregiver alerts placeholder (X5)
+//   #caregiverSystemStatus     – sync status placeholder (X6/X7)
+//
+// The legacy #caregiverContent element is only used for
+// loading / empty / error banners so it never collides with
+// the new structured containers.
+// ============================================================
+
+const RECENT_ACTIVITIES_LIMIT = 10;
+
+// ----------------------------------------------------------------
+// SAFE FORMAT HELPERS
+// ----------------------------------------------------------------
+
+function formatActivityDate(timestamp) {
+    try {
+        if (!timestamp) return "Not available";
+
+        // Firestore Timestamp
+        if (typeof timestamp.toDate === "function") {
+            const d = timestamp.toDate();
+            if (isNaN(d.getTime())) return "Not available";
+            return d.toLocaleString();
         }
 
+        // ISO string or other JS-parsable string
+        if (typeof timestamp === "string" || typeof timestamp === "number") {
+            const d = new Date(timestamp);
+            if (isNaN(d.getTime())) return "Not available";
+            return d.toLocaleString();
+        }
+    } catch (e) {
+        console.warn("formatActivityDate fallback:", e);
     }
+    return "Not available";
+}
+
+function formatActivityScore(score) {
+    try {
+        if (score === null || score === undefined) return "Not available";
+        const n = Number(score);
+        if (Number.isNaN(n)) return "Not available";
+        if (!Number.isFinite(n)) return "Not available";
+        return String(n);
+    } catch (e) {
+        return "Not available";
+    }
+}
+
+function formatActivityNumber(value) {
+    try {
+        if (value === null || value === undefined) return "-";
+        const n = Number(value);
+        if (Number.isNaN(n)) return "-";
+        if (!Number.isFinite(n)) return "-";
+        return String(n);
+    } catch (e) {
+        return "-";
+    }
+}
+
+function formatActivityName(activityType) {
+    if (!activityType || typeof activityType !== "string") {
+        return "Unknown Activity";
+    }
+    // Friendly label map for known types, else raw
+    const map = {
+        memory_sequence: "Memory Sequence",
+        routine_recall: "Daily Routine Recall",
+        pattern_recognition: "Pattern Recognition",
+        attention_challenge: "Attention Challenge"
+    };
+    return map[activityType] || activityType;
+}
+
+// Existing app rule: score >= 100 is successful.
+// Do NOT change this threshold. It matches the original
+// caregiver dashboard implementation.
+function getActivityStatus(score) {
+    if (score === null || score === undefined) return "Unknown";
+    const n = Number(score);
+    if (Number.isNaN(n)) return "Unknown";
+    if (n >= 100) return "Successful";
+    return "Incomplete";
+}
+
+function getActivityStatusClass(score) {
+    const s = getActivityStatus(score);
+    if (s === "Successful") return "status-success";
+    if (s === "Incomplete") return "status-incomplete";
+    return "status-unknown";
+}
+
+// ----------------------------------------------------------------
+// DATA: fetch & stats
+// ----------------------------------------------------------------
+
+async function fetchCaregiverActivities() {
+    const activityQuery = query(
+        collection(db, "activityResults"),
+        where("patientId", "==", PATIENT_ID)
+    );
+
+    const snapshot = await getDocs(activityQuery);
+
+    if (snapshot.empty) return [];
+
+    const rawActivities = [];
+    snapshot.forEach((doc) => {
+        try {
+            rawActivities.push({
+                ...doc.data(),
+                _id: doc.id
+            });
+        } catch (docErr) {
+            console.warn("Skipping malformed activity doc:", doc.id, docErr);
+        }
+    });
+
+    // Normalize + safe per-activity parse
+    const activities = rawActivities.map((data) => {
+        const scoreNum =
+            data.score !== undefined && data.score !== null
+                ? Number(data.score)
+                : NaN;
+        return {
+            _id: data._id || null,
+            activityType: data.activityType || null,
+            score: Number.isFinite(scoreNum) ? scoreNum : null,
+            difficulty:
+                data.difficulty !== undefined
+                    ? formatActivityNumber(data.difficulty)
+                    : "-",
+            attempts:
+                data.attempts !== undefined
+                    ? formatActivityNumber(data.attempts)
+                    : "-",
+            timestamp: data.timestamp || null,
+            _raw: data
+        };
+    });
+
+    // Sort newest first
+    activities.sort((a, b) => {
+        const extract = (t) => {
+            try {
+                if (t && typeof t.toDate === "function") return t.toDate();
+                if (typeof t === "string" || typeof t === "number") {
+                    const d = new Date(t);
+                    return isNaN(d.getTime()) ? new Date(0) : d;
+                }
+            } catch (_) {}
+            return new Date(0);
+        };
+        const timeA = extract(a.timestamp).getTime();
+        const timeB = extract(b.timestamp).getTime();
+        return timeB - timeA;
+    });
+
+    return activities;
+}
+
+function calculateDashboardStats(activities) {
+    const validScores = activities
+        .map((a) => a.score)
+        .filter((s) => s !== null && Number.isFinite(s));
+
+    const totalActivities = activities.length;
+
+    let averageScore = 0;
+    if (validScores.length > 0) {
+        const sum = validScores.reduce((acc, s) => acc + s, 0);
+        averageScore = Math.round(sum / validScores.length);
+    }
+
+    const bestScore = validScores.length > 0 ? Math.max(...validScores) : 0;
+
+    // Existing rule: score >= 100 successful
+    const successfulActivities = validScores.filter((s) => s >= 100).length;
+
+    return {
+        totalActivities,
+        averageScore,
+        bestScore,
+        successfulActivities,
+        scoreCount: validScores.length
+    };
+}
+
+// ----------------------------------------------------------------
+// CONTAINER HELPERS
+// ----------------------------------------------------------------
+
+function getDashboardContainers() {
+    return {
+        caregiverSection: document.getElementById("caregiverSection"),
+        caregiverContent: document.getElementById("caregiverContent"),
+        patientIdentity: document.getElementById("caregiverPatientIdentity"),
+        summary: document.getElementById("caregiverSummary"),
+        latest: document.getElementById("caregiverLatestActivity"),
+        recent: document.getElementById("caregiverRecentActivities"),
+        remindersSlot: document.getElementById("caregiverRemindersSlot"),
+        alerts: document.getElementById("caregiverAlerts"),
+        systemStatus: document.getElementById("caregiverSystemStatus")
+    };
+}
+
+function showContainer(el) {
+    if (el) el.style.display = "block";
+}
+function hideContainer(el) {
+    if (el) el.style.display = "none";
+}
+
+function renderDashboardState(visibleKeys) {
+    // visibleKeys: array of container IDs to show (excluding caregiverContent)
+    const c = getDashboardContainers();
+    const all = [
+        "patientIdentity",
+        "summary",
+        "latest",
+        "recent",
+        "remindersSlot",
+        "alerts",
+        "systemStatus"
+    ];
+    all.forEach((k) => {
+        if (visibleKeys.includes(k)) showContainer(c[k]);
+        else hideContainer(c[k]);
+    });
+}
+
+// ----------------------------------------------------------------
+// RENDER FUNCTIONS
+// ----------------------------------------------------------------
+
+function renderPatientIdentity() {
+    const c = getDashboardContainers();
+    if (!c.patientIdentity) return;
+
+    // Use last 4 chars of the hardcoded PATIENT_ID to create a
+    // friendly "Patient #" label without exposing the full raw ID.
+    const shortId =
+        (PATIENT_ID || "").toString().slice(-4) || "----";
+
+    c.patientIdentity.innerHTML = `
+        <div class="patient-identity-card" role="region" aria-label="Patient identity">
+            <div class="patient-avatar" aria-hidden="true">👴</div>
+            <div class="patient-identity-info">
+                <h3>Patient Profile</h3>
+                <p>Assigned patient for caregiver monitoring</p>
+                <span class="patient-id-chip" title="Patient ID">
+                    Patient #${shortId}
+                </span>
+            </div>
+        </div>
+    `;
+}
+
+function renderDashboardStats(stats) {
+    const c = getDashboardContainers();
+    if (!c.summary) return;
+
+    c.summary.innerHTML = `
+        <h3 class="section-header">📊 Patient Summary</h3>
+        <div class="summary-grid" role="list">
+            <div class="summary-card" role="listitem">
+                <div class="summary-card-icon" aria-hidden="true">🧠</div>
+                <div class="summary-card-value">${stats.totalActivities}</div>
+                <p class="summary-card-label">Total Activities</p>
+            </div>
+            <div class="summary-card" role="listitem">
+                <div class="summary-card-icon" aria-hidden="true">📈</div>
+                <div class="summary-card-value">${stats.averageScore}</div>
+                <p class="summary-card-label">
+                    Average Score
+                    <span style="font-size:12px;display:block;">
+                        (${stats.scoreCount} scored)
+                    </span>
+                </p>
+            </div>
+            <div class="summary-card" role="listitem">
+                <div class="summary-card-icon" aria-hidden="true">🏆</div>
+                <div class="summary-card-value">${stats.bestScore}</div>
+                <p class="summary-card-label">Best Score</p>
+            </div>
+            <div class="summary-card" role="listitem">
+                <div class="summary-card-icon" aria-hidden="true">✅</div>
+                <div class="summary-card-value">${stats.successfulActivities}</div>
+                <p class="summary-card-label">Successful</p>
+            </div>
+        </div>
+    `;
+}
+
+function renderLatestActivity(activity) {
+    const c = getDashboardContainers();
+    if (!c.latest) return;
+
+    if (!activity) {
+        c.latest.innerHTML = `
+            <h3 class="section-header">🧠 Latest Activity</h3>
+            <div class="dashboard-empty">
+                <h4>Not available yet</h4>
+                <p>No activity record is available to display.</p>
+            </div>
+        `;
+        return;
+    }
+
+    const name = formatActivityName(activity.activityType);
+    const dateStr = formatActivityDate(activity.timestamp);
+    const scoreStr = formatActivityScore(activity.score);
+    const statusText = getActivityStatus(activity.score);
+    const statusClass = getActivityStatusClass(activity.score);
+    const difficulty = activity.difficulty || "-";
+
+    c.latest.innerHTML = `
+        <h3 class="section-header">🧠 Latest Activity</h3>
+        <div class="latest-card">
+            <div class="latest-card-top">
+                <div>
+                    <h4 class="latest-card-title">${name}</h4>
+                    <p class="latest-card-meta">🕒 ${dateStr}</p>
+                </div>
+                <span class="status-badge ${statusClass}">${statusText}</span>
+            </div>
+            <div class="latest-card-stats">
+                <div class="latest-stat">
+                    <p class="latest-stat-label">Score</p>
+                    <p class="latest-stat-value">${scoreStr}</p>
+                </div>
+                <div class="latest-stat">
+                    <p class="latest-stat-label">Difficulty</p>
+                    <p class="latest-stat-value">${difficulty}</p>
+                </div>
+                <div class="latest-stat">
+                    <p class="latest-stat-label">Attempts</p>
+                    <p class="latest-stat-value">${activity.attempts || "-"}</p>
+                </div>
+            </div>
+        </div>
+    `;
+}
+
+function renderRecentActivities(activities, limit) {
+    const c = getDashboardContainers();
+    if (!c.recent) return;
+
+    const capped = Math.max(0, Math.min(activities.length, limit));
+    const slice = activities.slice(0, capped);
+
+    if (slice.length === 0) {
+        c.recent.innerHTML = `
+            <h3 class="section-header">📈 Recent Performance</h3>
+            <div class="dashboard-empty">
+                <h4>No activity records</h4>
+                <p>Recent activity will appear here once the patient
+                   completes a cognitive activity.</p>
+            </div>
+        `;
+        return;
+    }
+
+    let itemsHTML = "";
+    slice.forEach((act, idx) => {
+        try {
+            const name = formatActivityName(act.activityType);
+            const dateStr = formatActivityDate(act.timestamp);
+            const scoreStr = formatActivityScore(act.score);
+            const statusText = getActivityStatus(act.score);
+            const statusClass = getActivityStatusClass(act.score);
+
+            itemsHTML += `
+                <article class="recent-item" aria-label="Activity ${idx + 1}">
+                    <h4 class="recent-item-title">🧠 ${name}</h4>
+                    <div class="recent-item-meta">
+                        <span>🕒 ${dateStr}</span>
+                        <span>🎯 Difficulty: ${act.difficulty || "-"}</span>
+                        <span>🔄 Attempts: ${act.attempts || "-"}</span>
+                        <span class="status-badge ${statusClass}">${statusText}</span>
+                    </div>
+                    <div class="recent-item-score">
+                        <strong>${scoreStr}</strong>
+                        <small>Score</small>
+                    </div>
+                </article>
+            `;
+        } catch (itemErr) {
+            console.warn("Skipping recent activity render:", itemErr);
+        }
+    });
+
+    c.recent.innerHTML = `
+        <h3 class="section-header">
+            📈 Recent Performance
+            <span style="
+                font-size:14px;
+                font-weight:400;
+                color:var(--secondary);
+            ">
+                (latest ${slice.length}${activities.length > slice.length
+                    ? " of " + activities.length : ""})
+            </span>
+        </h3>
+        <div class="recent-list">
+            ${itemsHTML}
+        </div>
+    `;
+}
+
+function renderRemindersSlot() {
+    const c = getDashboardContainers();
+    if (!c.remindersSlot) return;
+
+    c.remindersSlot.innerHTML = `
+        <div class="placeholder-card">
+            <h4>📅 Reminders</h4>
+            <p>
+                Reminders are managed in the Create Reminder panel
+                directly below.
+            </p>
+            <p>
+                Future X2 / X3 will surface upcoming reminders and
+                reminder-management controls here.
+            </p>
+            <button
+                type="button"
+                class="placeholder-link-btn"
+                id="dashboardJumpToRemindersBtn"
+            >
+                🔔 Go to Create Reminder panel
+            </button>
+        </div>
+    `;
+
+    // Wire a small jump-to button (no create/delete logic touched)
+    const jump = document.getElementById("dashboardJumpToRemindersBtn");
+    if (jump) {
+        jump.addEventListener("click", () => {
+            const target = document.getElementById("createReminderSection");
+            if (target) {
+                target.scrollIntoView({ behavior: "smooth", block: "start" });
+            }
+        });
+    }
+}
+
+function renderAlertsPlaceholder() {
+    const c = getDashboardContainers();
+    if (!c.alerts) return;
+
+    c.alerts.innerHTML = `
+        <div class="placeholder-card">
+            <h4>🚨 Caregiver Alerts</h4>
+            <p>
+                No alerts configured.
+            </p>
+            <p>
+                A future task (X5) will surface important patient
+                activity trends and anomalies here, powered by the
+                existing FCM notification infrastructure.
+            </p>
+        </div>
+    `;
+}
+
+function renderSystemStatusPlaceholder() {
+    const c = getDashboardContainers();
+    if (!c.systemStatus) return;
+
+    c.systemStatus.innerHTML = `
+        <div class="placeholder-card">
+            <h4>📡 System Status</h4>
+            <p>
+                <span class="system-status-pill">
+                    <span class="system-status-dot" aria-hidden="true"></span>
+                    Online
+                </span>
+            </p>
+            <p>
+                Last data refresh: just now
+            </p>
+            <p style="margin-top:10px;">
+                Full offline mode and sync status indicators will be
+                added by tasks X6 (Offline Strategy) and X7 (Offline
+                Synchronization).
+            </p>
+        </div>
+    `;
+}
+
+function renderDashboardLoadingMessage() {
+    const c = getDashboardContainers();
+    if (!c.caregiverContent) return;
+    c.caregiverContent.innerHTML = `
+        <div class="dashboard-loading">
+            Loading patient information…
+        </div>
+    `;
+}
+
+function renderDashboardErrorMessage() {
+    const c = getDashboardContainers();
+    if (!c.caregiverContent) return;
+    c.caregiverContent.innerHTML = `
+        <div class="dashboard-error">
+            Unable to load patient activity. Please try again.
+        </div>
+    `;
+}
+
+function renderDashboardEmptyMessage() {
+    const c = getDashboardContainers();
+    if (!c.caregiverContent) return;
+    c.caregiverContent.innerHTML = `
+        <div class="dashboard-empty">
+            <h4>📭 No activity records available yet.</h4>
+            <p>
+                Summary and history will appear here as soon as the
+                patient completes cognitive activities.
+            </p>
+        </div>
+    `;
+}
+
+function clearDashboardBanners() {
+    const c = getDashboardContainers();
+    if (!c.caregiverContent) return;
+    c.caregiverContent.innerHTML = "";
+}
+
+// ----------------------------------------------------------------
+// MAIN ENTRY POINT (preserves original name)
+// ----------------------------------------------------------------
+
+async function loadCaregiverDashboard() {
+    const c = getDashboardContainers();
+
+    if (!c.caregiverSection || !c.caregiverContent) {
+        console.error("Caregiver dashboard elements not found.");
+        return;
+    }
+
+    c.caregiverSection.style.display = "block";
+    c.caregiverSection.scrollIntoView({ behavior: "smooth" });
+
+    // Always render identity, reminders slot, alerts & status
+    // placeholders so the layout structure is always present
+    // (even when no data exists).
+    renderPatientIdentity();
+    renderRemindersSlot();
+    renderAlertsPlaceholder();
+    renderSystemStatusPlaceholder();
+
+    // Show loading message while fetching
+    renderDashboardLoadingMessage();
+    renderDashboardState(["patientIdentity", "remindersSlot", "alerts", "systemStatus"]);
+
+    let activities = [];
+    try {
+        activities = await fetchCaregiverActivities();
+    } catch (error) {
+        console.error("Caregiver dashboard error:", error);
+        renderDashboardErrorMessage();
+        renderDashboardState(["patientIdentity", "remindersSlot", "alerts", "systemStatus"]);
+        return;
+    }
+
+    if (activities.length === 0) {
+        clearDashboardBanners();
+        renderDashboardEmptyMessage();
+        renderLatestActivity(null);
+        renderRecentActivities([], RECENT_ACTIVITIES_LIMIT);
+        renderDashboardStats({
+            totalActivities: 0,
+            averageScore: 0,
+            bestScore: 0,
+            successfulActivities: 0,
+            scoreCount: 0
+        });
+        renderDashboardState([
+            "patientIdentity",
+            "summary",
+            "latest",
+            "recent",
+            "remindersSlot",
+            "alerts",
+            "systemStatus"
+        ]);
+        return;
+    }
+
+    // Success path: data present
+    clearDashboardBanners();
+    const stats = calculateDashboardStats(activities);
+    renderDashboardStats(stats);
+    renderLatestActivity(activities[0]);
+    renderRecentActivities(activities, RECENT_ACTIVITIES_LIMIT);
+    renderDashboardState([
+        "patientIdentity",
+        "summary",
+        "latest",
+        "recent",
+        "remindersSlot",
+        "alerts",
+        "systemStatus"
+    ]);
+}
 // ================================
 // MEMORY SEQUENCE ACTIVITY
 // ================================

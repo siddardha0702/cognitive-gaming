@@ -649,7 +649,7 @@ html
 
 <section
     id="caregiverSection"
-    class="assistant"
+    class="assistant caregiver-dashboard"
     style="display: none;"
 >
 
@@ -662,6 +662,61 @@ html
     <div id="caregiverContent">
         Loading caregiver dashboard...
     </div>
+
+    <!-- ======================================================
+         EXTENSIBLE DASHBOARD SECTIONS (populated by app.js)
+         Future tasks: plug content into these containers.
+         ====================================================== -->
+
+    <!-- 1. PATIENT IDENTITY -->
+    <div
+        id="caregiverPatientIdentity"
+        class="dashboard-section dashboard-patient-identity"
+        style="display: none;"
+    ></div>
+
+    <!-- 2. PATIENT SUMMARY (stats) -->
+    <div
+        id="caregiverSummary"
+        class="dashboard-section dashboard-summary"
+        style="display: none;"
+    ></div>
+
+    <!-- 3. LATEST ACTIVITY -->
+    <div
+        id="caregiverLatestActivity"
+        class="dashboard-section dashboard-latest"
+        style="display: none;"
+    ></div>
+
+    <!-- 4. RECENT PERFORMANCE -->
+    <div
+        id="caregiverRecentActivities"
+        class="dashboard-section dashboard-recent"
+        style="display: none;"
+    ></div>
+
+    <!-- 5. REMINDERS (DASHBOARD SLOT — X2/X3 plug in here)
+         Full create/delete UI still lives in #createReminderSection -->
+    <div
+        id="caregiverRemindersSlot"
+        class="dashboard-section dashboard-reminders-slot"
+        style="display: none;"
+    ></div>
+
+    <!-- 6. CAREGIVER ALERTS (X5 plugs in here) -->
+    <div
+        id="caregiverAlerts"
+        class="dashboard-section dashboard-alerts"
+        style="display: none;"
+    ></div>
+
+    <!-- 7. SYSTEM STATUS (X6/X7 plug in here) -->
+    <div
+        id="caregiverSystemStatus"
+        class="dashboard-section dashboard-system-status"
+        style="display: none;"
+    ></div>
 
 </section>
         <section class="assistant">
