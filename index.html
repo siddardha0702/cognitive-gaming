@@ -6,6 +6,19 @@ html
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
 
     <title>Cognitive Gaming - Memory Assistance</title>
+    <div id="languageSelector">
+    <label for="languageSelect">🌐 Language</label>
+
+    <select id="languageSelect">
+       <option value="en">🇬🇧 English</option>
+<option value="as">🇮🇳 অসমীয়া (Assamese)</option>
+<option value="mni-Mtei">🇮🇳 মৈতৈলোন্ (Manipuri)</option>
+<option value="lus">🇮🇳 Mizo</option>
+<option value="bn">🇮🇳 বাংলা (Bengali)</option>
+<option value="ne">🇮🇳 नेपाली (Nepali)</option>
+<option value="hi">🇮🇳 हिन्दी (Hindi)</option>
+    </select>
+</div>
 <link rel="stylesheet" href="./style.css">
     
 </head>
@@ -160,18 +173,18 @@ html
          ">
     </div>
 
+    <div id="memoryOptions" aria-label="Memory item choices"></div>
+
+    <label for="answer">Enter the number you remember:</label>
     <input
         id="answer"
         type="text"
-        placeholder="Enter the numbers you remember"
-        style="
-            width: 100%;
-            padding: 15px;
-            font-size: 20px;
-            border: 1px solid #bfc8d6;
-            border-radius: 10px;
-            margin-bottom: 15px;
-        "
+        inputmode="numeric"
+        autocomplete="off"
+        maxlength="6"
+        placeholder="Enter the number"
+        aria-label="Enter the number you remember"
+        disabled
     >
 
     <button id="checkAnswer">
@@ -678,9 +691,23 @@ html
                 placeholder="Type your question here..."
             ></textarea>
 
-            <button id="askGemini">
-                Ask Assistant
-            </button>
+            <div class="assistant-actions" aria-label="Assistant controls">
+                <button id="startListening" type="button" aria-pressed="false">
+                    Start listening
+                </button>
+
+                <button id="askGemini" type="button">
+                    Ask Assistant
+                </button>
+
+                <button id="repeatResponse" type="button" disabled>
+                    Read answer aloud
+                </button>
+            </div>
+
+            <p id="voiceStatus" class="voice-status" role="status" aria-live="polite">
+                Tap “Start listening” to ask your question out loud.
+            </p>
 
             <div id="response">
                 The assistant's response will appear here.

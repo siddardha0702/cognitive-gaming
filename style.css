@@ -322,6 +322,27 @@
         background: #ffffff !important;
     }
 
+    #memoryOptions {
+        display: grid;
+        grid-template-columns: repeat(2, minmax(0, 1fr));
+        gap: 12px;
+        margin: 18px 0;
+    }
+
+    .memory-object-option {
+        min-height: 64px;
+        padding: 12px;
+        font-size: 18px;
+        line-height: 1.3;
+        text-align: left;
+    }
+
+    @media (max-width: 560px) {
+        #memoryOptions {
+            grid-template-columns: 1fr;
+        }
+    }
+
     #gameResult {
         margin-top: 20px;
         padding: 14px 16px;
@@ -450,6 +471,48 @@
         white-space: pre-wrap;
     }
 
+    .assistant-actions {
+        display: flex;
+        flex-wrap: wrap;
+        gap: 12px;
+        margin-top: 18px;
+    }
+
+    #startListening {
+        background: var(--green);
+    }
+
+    #startListening:hover,
+    #startListening.is-listening {
+        background: #185b37;
+    }
+
+    #startListening.is-listening {
+        animation: voice-pulse 1.3s ease-in-out infinite;
+    }
+
+    #repeatResponse {
+        background: #526070;
+    }
+
+    #repeatResponse:disabled {
+        cursor: not-allowed;
+        opacity: 0.55;
+        box-shadow: none;
+    }
+
+    .voice-status {
+        margin: 14px 0 0;
+        color: var(--secondary);
+        font-size: 16px;
+    }
+
+    @keyframes voice-pulse {
+        50% {
+            box-shadow: 0 3px 8px rgba(35, 122, 75, 0.22), 0 0 0 7px rgba(35, 122, 75, 0.12);
+        }
+    }
+
     /* =========================
        FOOTER
        ========================= */
@@ -497,6 +560,10 @@
             min-height: 54px;
             margin-left: 0 !important;
             margin-bottom: 10px;
+        }
+
+        .assistant-actions {
+            display: block;
         }
 
         #remindersSection > div:first-child {

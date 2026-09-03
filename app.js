@@ -1,5 +1,5 @@
 
-    
+
         import {
     app,
     db,
@@ -18,12 +18,12 @@
     setDoc
 } from "./firebase.js";
 
-        
-            
+import { getCulturalGameContent } from "./cultural-content.js";
+import { calculateAdaptiveDifficulty } from "./adaptive-difficulty.js";
 
-        // Analytics
-        import { getAnalytics }
-            from "https://www.gstatic.com/firebasejs/12.18.0/firebase-analytics.js";
+
+
+
             // FCM
 import {
     getMessaging,
@@ -31,7 +31,7 @@ import {
     onMessage
 } from "https://www.gstatic.com/firebasejs/12.18.0/firebase-messaging.js";
 const messaging = getMessaging(app);
-            
+
         // App Check
 import {
     initializeAppCheck,
@@ -43,10 +43,10 @@ import {
     getGenerativeModel,
     GoogleAIBackend
 } from "https://www.gstatic.com/firebasejs/12.18.0/firebase-ai.js";
-        
 
 
-        
+
+
         // ================================
 // FCM NOTIFICATIONS
 // ================================
@@ -271,7 +271,7 @@ if (actualRole === "patient") {
 
 } else if (actualRole === "caregiver") {
 
-    
+
 
     // Hide cognitive activity from caregiver
 if (cognitiveActivityCard) {
@@ -294,7 +294,7 @@ if (caregiverSection) {
     caregiverSection.style.display = "block";
 }
 
-loadCaregiverDashboard(); 
+loadCaregiverDashboard();
 loadCaregiverReminders();
 
 console.log("👨‍👩‍👧 Caregiver view enabled.");
@@ -372,7 +372,6 @@ if (caregiverAreaButton) {
 
 
         // Analytics
-        getAnalytics(app);
 
 
         // Gemini
@@ -387,17 +386,144 @@ if (caregiverAreaButton) {
 
         console.log("Cognitive Gaming Firebase + Gemini ready!");
 
+        const assistantLanguages = {
+            en: "English",
+            as: "Assamese",
+            "mni-Mtei": "Meiteilon (Manipuri), using Meetei Mayek script",
+            lus: "Mizo",
+            bn: "Bengali",
+            ne: "Nepali",
+            hi: "Hindi"
+        };
+
+        const speechLanguages = {
+            en: "en-IN",
+            as: "as-IN",
+            "mni-Mtei": "mni-Mtei-IN",
+            lus: "lus-IN",
+            bn: "bn-IN",
+            ne: "ne-NP",
+            hi: "hi-IN"
+        };
+
+        const promptElement = document.getElementById("prompt");
+        const responseElement = document.getElementById("response");
+        const listenButton = document.getElementById("startListening");
+        const repeatButton = document.getElementById("repeatResponse");
+        const voiceStatus = document.getElementById("voiceStatus");
+        const SpeechRecognition =
+            window.SpeechRecognition || window.webkitSpeechRecognition;
+
+        function selectedSpeechLanguage() {
+            const language = document.getElementById("languageSelect").value;
+            return speechLanguages[language] || "en-IN";
+        }
+
+        function setVoiceStatus(message) {
+            voiceStatus.textContent = message;
+        }
+
+        function speakResponse() {
+            const text = responseElement.textContent.trim();
+            const language = selectedSpeechLanguage();
+
+            if (!text || text === "The assistant's response will appear here.") {
+                setVoiceStatus("Ask a question first, then you can hear the answer aloud.");
+                return;
+            }
+
+            if (!("speechSynthesis" in window)) {
+                setVoiceStatus("Reading answers aloud is not available in this browser.");
+                return;
+            }
+
+            const availableVoices = window.speechSynthesis.getVoices();
+            const languageCode = language.split("-")[0].toLowerCase();
+            if (availableVoices.length && !availableVoices.some((voice) =>
+                voice.lang.toLowerCase().split("-")[0] === languageCode
+            )) {
+                setVoiceStatus("This browser does not have a voice for the selected language. The answer is available as text.");
+                return;
+            }
+
+            window.speechSynthesis.cancel();
+            const utterance = new SpeechSynthesisUtterance(text);
+            utterance.lang = language;
+            utterance.rate = 0.85;
+            utterance.onstart = () => setVoiceStatus("Reading the answer aloud…");
+            utterance.onend = () => setVoiceStatus("Finished reading the answer.");
+            utterance.onerror = () => setVoiceStatus("I could not read that answer aloud.");
+            window.speechSynthesis.speak(utterance);
+        }
+
+        if (!SpeechRecognition) {
+            listenButton.disabled = true;
+            setVoiceStatus("Voice input is not available in this browser. You can still type a question.");
+        } else {
+            const recognition = new SpeechRecognition();
+            let shouldSubmitVoiceQuestion = false;
+            recognition.continuous = false;
+            recognition.interimResults = true;
+
+            listenButton.addEventListener("click", () => {
+                recognition.lang = selectedSpeechLanguage();
+                shouldSubmitVoiceQuestion = false;
+                try {
+                    recognition.start();
+                } catch (error) {
+                    setVoiceStatus("Voice input is already starting. Please wait a moment.");
+                }
+            });
+
+            recognition.onstart = () => {
+                listenButton.classList.add("is-listening");
+                listenButton.setAttribute("aria-pressed", "true");
+                listenButton.textContent = "Listening…";
+                setVoiceStatus("Listening. Speak your question now.");
+            };
+
+            recognition.onresult = (event) => {
+                let transcript = "";
+                for (let index = event.resultIndex; index < event.results.length; index += 1) {
+                    transcript += event.results[index][0].transcript;
+                }
+                promptElement.value = transcript.trim();
+                setVoiceStatus("I heard: “" + promptElement.value + "”");
+                shouldSubmitVoiceQuestion = Array.from(event.results)
+                    .some((result) => result.isFinal);
+            };
+
+            recognition.onerror = (event) => {
+                shouldSubmitVoiceQuestion = false;
+                let message = "I could not hear that. Please try again or type your question.";
+                if (event.error === "not-allowed") {
+                    message = "Microphone access was not allowed. Please enable it and try again.";
+                } else if (event.error === "language-not-supported") {
+                    message = "Voice input is not available for the selected language in this browser. Please type your question.";
+                }
+                setVoiceStatus(message);
+            };
+
+            recognition.onend = () => {
+                listenButton.classList.remove("is-listening");
+                listenButton.setAttribute("aria-pressed", "false");
+                listenButton.textContent = "Start listening";
+                if (shouldSubmitVoiceQuestion && promptElement.value.trim()) {
+                    shouldSubmitVoiceQuestion = false;
+                    setVoiceStatus("Sending your question to the assistant…");
+                    document.getElementById("askGemini").click();
+                }
+            };
+        }
+
+        repeatButton.addEventListener("click", speakResponse);
 
         // Gemini Assistant
         document
             .getElementById("askGemini")
             .addEventListener("click", async () => {
 
-                const prompt =
-                    document.getElementById("prompt").value.trim();
-
-                const responseElement =
-                    document.getElementById("response");
+                const prompt = promptElement.value.trim();
 
 
                 if (!prompt) {
@@ -413,6 +539,12 @@ if (caregiverAreaButton) {
 
                 try {
 
+                    const selectedLanguage =
+                        document.getElementById("languageSelect").value;
+
+                    const responseLanguage =
+                        assistantLanguages[selectedLanguage] || "English";
+
                     const result =
                         await model.generateContent(
                             `You are a friendly memory assistance AI
@@ -421,6 +553,7 @@ if (caregiverAreaButton) {
                              Give simple, clear and supportive answers.
                              Do not diagnose medical conditions.
                              Do not give medical treatment instructions.
+                             Respond only in ${responseLanguage}.
 
                              User question:
                              ${prompt}`
@@ -429,6 +562,8 @@ if (caregiverAreaButton) {
 
                     responseElement.textContent =
                         result.response.text();
+                    repeatButton.disabled = false;
+                    speakResponse();
 
 
                 } catch (error) {
@@ -805,7 +940,7 @@ setInterval(() => {
 // ================================
 
 
-            
+
 
        document.getElementById("progressBtn")
     .addEventListener("click", async () => {
@@ -1354,9 +1489,12 @@ const checkAnswer = document.getElementById("checkAnswer");
 const nextRound = document.getElementById("nextRound");
 const gameResult = document.getElementById("gameResult");
 const gameInstructions = document.getElementById("gameInstructions");
+const memoryOptions = document.getElementById("memoryOptions");
 
-let currentSequence = "";
+let currentSequence = [];
+let selectedMemoryItems = [];
 let currentLength = 3;
+let roundTimer;
 
 const MIN_DIFFICULTY = 2;
 const MAX_DIFFICULTY = 6;
@@ -1442,56 +1580,75 @@ activityBtn.addEventListener("click", () => {
 async function startRound() {
 
     await updateDifficulty();
-    
+
     answerElement.value = "";
+    answerElement.disabled = true;
+    selectedMemoryItems = [];
+    memoryOptions.innerHTML = "";
     gameResult.textContent = "";
 
     checkAnswer.style.display = "inline-block";
+    checkAnswer.disabled = true;
     nextRound.style.display = "none";
+    gameInstructions.textContent = "Remember the number shown below. You will have 3 seconds.";
 
-    gameInstructions.textContent =
-        "Remember the numbers shown below.";
+    currentSequence = Array.from(
+        { length: currentLength },
+        () => Math.floor(Math.random() * 10)
+    );
 
-    currentSequence = "";
+    sequenceElement.textContent = currentSequence.join("");
 
-    for (let i = 0; i < currentLength; i++) {
-        currentSequence += Math.floor(Math.random() * 10);
-    }
+    clearTimeout(roundTimer);
+    roundTimer = setTimeout(() => {
 
-    sequenceElement.textContent = currentSequence;
-
-    setTimeout(() => {
-
-        sequenceElement.textContent = "● ● ●";
-
-        gameInstructions.textContent =
-            "Now enter the numbers you remember.";
+        sequenceElement.textContent = "?".repeat(currentLength);
+        gameInstructions.textContent = "Enter the number you remember, then check your answer.";
+        answerElement.disabled = false;
+        answerElement.focus();
+        checkAnswer.disabled = false;
 
     }, 3000);
+}
+
+function showMemoryOptions(objects) {
+    [...objects].sort(() => Math.random() - 0.5).forEach(([id, label]) => {
+        const button = document.createElement("button");
+        button.type = "button";
+        button.textContent = label;
+        button.className = "memory-object-option";
+        button.addEventListener("click", () => {
+            selectedMemoryItems.push(id);
+            answerElement.value = selectedMemoryItems.join("|");
+            button.disabled = true;
+            button.textContent = `✓ ${label}`;
+            checkAnswer.disabled = selectedMemoryItems.length !== currentSequence.length;
+        });
+        memoryOptions.appendChild(button);
+    });
 }
 
 checkAnswer.addEventListener("click", async () => {
 
     const userAnswer = answerElement.value.trim();
 
-    if (!userAnswer) {
-        gameResult.textContent =
-            "Please enter your answer.";
+    if (answerElement.disabled || !userAnswer) {
+        gameResult.textContent = "Please enter the number before checking.";
         return;
     }
 
-    const correct = userAnswer === currentSequence;
+    const correct = userAnswer === currentSequence.join("");
     const score = correct ? 100 : 0;
 
     if (correct) {
 
         gameResult.textContent =
-            "✅ Excellent! You remembered correctly.";
+           t("memorySuccess");
 
     } else {
 
         gameResult.textContent =
-            "That's okay. Let's try again.";
+           t("memoryTryAgain");
     }
 
     // Save the result to Firestore
@@ -1525,12 +1682,41 @@ checkAnswer.addEventListener("click", async () => {
     }
 
     checkAnswer.style.display = "none";
+    memoryOptions.querySelectorAll("button").forEach((button) => { button.disabled = true; });
     nextRound.style.display = "inline-block";
 });
 
 nextRound.addEventListener("click", () => {
     startRound();
 });
+
+// Performance-based adaptive difficulty: gradual game settings, not a medical AI diagnosis.
+async function getActivityDifficulty(activityType, levels) {
+    try {
+        const snapshot = await getDocs(query(
+            collection(db, "activityResults"),
+            where("patientId", "==", PATIENT_ID)
+        ));
+        const results = [];
+
+        snapshot.forEach((resultDocument) => {
+            const result = resultDocument.data();
+            if (result.activityType === activityType) {
+                results.push({
+                    score: result.score,
+                    difficulty: result.difficulty,
+                    timestamp: result.timestamp?.toMillis?.() || 0
+                });
+            }
+        });
+
+        results.sort((first, second) => first.timestamp - second.timestamp);
+        return calculateAdaptiveDifficulty(results, levels);
+    } catch (error) {
+        console.error("Adaptive difficulty could not load results:", error);
+        return levels[0];
+    }
+}
 // ================================
 // ATTENTION / CONCENTRATION GAME
 // ================================
@@ -1546,8 +1732,15 @@ const attentionInstructions =
     document.getElementById("attentionInstructions");
 
 let attentionCorrectAnswer = null;
+let attentionChoiceCount = 9;
+const ATTENTION_DIFFICULTY_LEVELS = [9, 16, 25];
 
-function createAttentionGame() {
+async function createAttentionGame() {
+
+    attentionChoiceCount = await getActivityDifficulty(
+        "attention_challenge",
+        ATTENTION_DIFFICULTY_LEVELS
+    );
 
     attentionGrid.innerHTML = "";
     attentionResult.textContent = "";
@@ -1566,11 +1759,13 @@ function createAttentionGame() {
     } while (differentNumber === normalNumber);
 
     const differentPosition =
-        Math.floor(Math.random() * 16);
+        Math.floor(Math.random() * attentionChoiceCount);
 
     attentionCorrectAnswer = differentPosition;
+    attentionGrid.style.gridTemplateColumns =
+        `repeat(${Math.sqrt(attentionChoiceCount)}, 1fr)`;
 
-    for (let i = 0; i < 16; i++) {
+    for (let i = 0; i < attentionChoiceCount; i++) {
 
         const button = document.createElement("button");
 
@@ -1586,27 +1781,55 @@ function createAttentionGame() {
 
         button.addEventListener("click", () => {
 
-            if (Number(button.dataset.position) ===
-                attentionCorrectAnswer) {
+           if (
+    Number(button.dataset.position) ===
+    attentionCorrectAnswer
+) {
 
-                attentionResult.textContent =
-                    "✅ Excellent! You found it.";
+    attentionResult.textContent =
+        "✅ Excellent! You found it.";
 
-            } else {
+    saveAttentionResult(100);
 
-                attentionResult.textContent =
-                    "That's okay. Try again!";
-            }
+} else {
+
+    attentionResult.textContent =
+        "That's okay. Try again!";
+
+    saveAttentionResult(0);
+}
 
         });
 
         attentionGrid.appendChild(button);
     }
 }
+async function saveAttentionResult(score) {
+    try {
+        await addDoc(
+            collection(db, "activityResults"),
+            {
+                patientId: PATIENT_ID,
+                activityType: "attention_challenge",
+                score: score,
+                difficulty: attentionChoiceCount,
+                attempts: 1,
+                timestamp: serverTimestamp()
+            }
+        );
 
+        console.log("✅ Attention challenge result saved.");
+
+    } catch (error) {
+        console.error(
+            "❌ Could not save attention challenge result:",
+            error
+        );
+    }
+}
 
 // Open Attention Game
-attentionBtn.addEventListener("click", () => {
+attentionBtn.addEventListener("click", async () => {
 
     attentionGame.style.display = "block";
 
@@ -1614,14 +1837,37 @@ attentionBtn.addEventListener("click", () => {
         behavior: "smooth"
     });
 
-    createAttentionGame();
+    await createAttentionGame();
 });
 
 
 // Start / restart game
-startAttentionGame.addEventListener("click", () => {
+startAttentionGame.addEventListener("click", async () => {
 
-    createAttentionGame();
+    await createAttentionGame();
+    async function saveAttentionResult(score) {
+    try {
+        await addDoc(
+            collection(db, "activityResults"),
+            {
+                patientId: PATIENT_ID,
+                activityType: "attention_challenge",
+                score: score,
+                difficulty: 16,
+                attempts: 1,
+                timestamp: serverTimestamp()
+            }
+        );
+
+        console.log("✅ Attention challenge result saved.");
+
+    } catch (error) {
+        console.error(
+            "❌ Could not save attention challenge result:",
+            error
+        );
+    }
+}
 
 });
 // ================================
@@ -1663,33 +1909,25 @@ const routineInstructions =
 const routineProgress =
     document.getElementById("routineProgress");
 
-const dailyRoutines = {
-    morning: [
-        "🌅 Wake up",
-        "🪥 Brush teeth",
-        "🍳 Have breakfast",
-        "💊 Take medicine"
-    ],
-
-    afternoon: [
-        "🍛 Have lunch",
-        "💧 Drink water",
-        "🚶 Go for a walk",
-        "😴 Take a short rest"
-    ],
-
-    evening: [
-        "☕ Have evening snack",
-        "💧 Drink water",
-        "📺 Relax",
-        "🍽️ Have dinner"
-    ]
-};
-
 let currentRoutine = [];
 let routineCurrentStep = 0;
 let routineScore = 0;
 let currentRoutineTime = null;
+
+function currentGameContent() {
+    return getCulturalGameContent(getCurrentLanguage());
+}
+
+function applyCulturalGameLabels() {
+    const content = currentGameContent();
+    morningRoutineBtn.textContent = content.timeLabels.morning;
+    afternoonRoutineBtn.textContent = content.timeLabels.afternoon;
+    eveningRoutineBtn.textContent = content.timeLabels.evening;
+    checkAnswer.textContent = content.text.checkAnswer;
+    nextRound.textContent = content.text.next;
+    nextRoutineRound.textContent = content.text.next;
+    nextPatternRound.textContent = content.text.next;
+}
 
 
 // Start a new round
@@ -1703,10 +1941,10 @@ function startRoutineRound(timeOfDay) {
 
     nextRoutineRound.style.display = "none";
 
-    currentRoutine = [...dailyRoutines[timeOfDay]];
+    const content = currentGameContent();
+    currentRoutine = [...content.routines[timeOfDay]];
 
-    routineInstructions.textContent =
-        "Remember this routine in the correct order.";
+    routineInstructions.textContent = content.text.rememberRoutine;
 
     routineSequence.textContent =
         currentRoutine.join(" → ");
@@ -1718,8 +1956,7 @@ function startRoutineRound(timeOfDay) {
         routineSequence.textContent =
             "● ● ● ●";
 
-        routineInstructions.textContent =
-            "Tap the activities in the order you remember.";
+        routineInstructions.textContent = content.text.chooseObjects;
 
         showRoutineOptions();
 
@@ -1874,8 +2111,8 @@ routineRecallBtn.addEventListener("click", () => {
         behavior: "smooth"
     });
 
-    routineInstructions.textContent =
-        "Choose Morning, Afternoon, or Evening.";
+    routineTimeOptions.style.display = "grid";
+    routineInstructions.textContent = currentGameContent().text.chooseTime;
 
     routineSequence.textContent = "";
 
@@ -1960,6 +2197,7 @@ const nextPatternRound =
     document.getElementById("nextPatternRound");
 
 let correctPattern = "";
+let activePatterns = [];
 
 const patterns = [
     "🔵 ⭐ 🔵 ⭐",
@@ -1976,12 +2214,13 @@ function startPatternRound() {
 
     nextPatternRound.style.display = "none";
 
-    patternInstructions.textContent =
-        "Remember the pattern shown below.";
+    const content = currentGameContent();
+    activePatterns = content.patterns;
+    patternInstructions.textContent = content.text.patternRemember;
 
     correctPattern =
-        patterns[
-            Math.floor(Math.random() * patterns.length)
+        activePatterns[
+            Math.floor(Math.random() * activePatterns.length)
         ];
 
     patternDisplay.textContent =
@@ -1994,8 +2233,7 @@ function startPatternRound() {
         patternDisplay.textContent =
             "● ● ● ●";
 
-        patternInstructions.textContent =
-            "Tap the pattern you remember.";
+        patternInstructions.textContent = content.text.patternChoose;
 
         showPatternOptions();
 
@@ -2010,7 +2248,7 @@ function showPatternOptions() {
 
     const options = [
         correctPattern,
-        ...patterns.filter(
+        ...activePatterns.filter(
             pattern => pattern !== correctPattern
         ).slice(0, 3)
     ];
@@ -2425,7 +2663,256 @@ document.addEventListener("click", async (event) => {
     }
 
 });
+// ================================
+// LANGUAGE SELECTION
+// ================================
 
-    
+const languageSelect =
+    document.getElementById("languageSelect");
+languageSelect.addEventListener("change", () => {
+
+    const selectedLanguage =
+        languageSelect.value;
+
+    applyLanguage(selectedLanguage);
+
+});
+// ================================
+// TRANSLATIONS
+// ================================
+
+const translations = {
+
+    en: {
+        welcome: "Welcome 👋",
+        cognitiveActivity: "🧠 Cognitive Activity",
+        startActivity: "Start Activity",
+        attention: "🎯 Attention Challenge",
+        routine: "🔢 Daily Routine Recall",
+        pattern: "🧩 Pattern Recognition",
+        mood: "😊 Mood Check-In",
+        reminders: "📅 Reminders",
+        progress: "📊 Progress",
+        caregiver: "👨‍👩‍👧 Caregiver",
+        assistant: "🤖 Memory Assistant",
+memoryTitle: "🧠 Memory Sequence",
+rememberNumbers: "Remember the numbers shown below.",
+enterNumbers: "Now enter the numbers you remember.",
+pleaseEnter: "Please enter your answer.",
+memorySuccess: "✅ Excellent! You remembered correctly.",
+memoryTryAgain: "That's okay. Let's try again.",
+nextRound: "Next Round",
+    },
+
+    hi: {
+        welcome: "स्वागत है 👋",
+        cognitiveActivity: "🧠 स्मृति गतिविधि",
+        startActivity: "गतिविधि शुरू करें",
+        attention: "🎯 ध्यान चुनौती",
+        routine: "🔢 दैनिक दिनचर्या याद करें",
+        pattern: "🧩 पैटर्न पहचान",
+        mood: "😊 मन की स्थिति",
+        reminders: "📅 रिमाइंडर",
+        progress: "📊 प्रगति",
+        caregiver: "👨‍👩‍👧 देखभालकर्ता",
+        assistant: "🤖 स्मृति सहायक",
+        memoryTitle: "🧠 स्मृति क्रम",
+    rememberNumbers: "नीचे दिखाई गई संख्याओं को याद रखें।",
+    enterNumbers: "अब वे संख्याएँ दर्ज करें जो आपको याद हैं।",
+    pleaseEnter: "कृपया अपना उत्तर दर्ज करें।",
+    memorySuccess: "✅ बहुत बढ़िया! आपने सही याद रखा।",
+    memoryTryAgain: "कोई बात नहीं। फिर से कोशिश करें।",
+    nextRound: "अगला राउंड",
+
+    },
+as: {
+    welcome: "স্বাগতম 👋",
+    cognitiveActivity: "🧠 জ্ঞানীয় কাৰ্যকলাপ",
+    startActivity: "কাৰ্যকলাপ আৰম্ভ কৰক",
+    attention: "🎯 মনোযোগৰ প্ৰত্যাহ্বান",
+    routine: "🔢 দৈনন্দিন কাৰ্যসূচী মনত পেলাওক",
+    pattern: "🧩 আৰ্হি চিনাক্তকৰণ",
+    mood: "😊 মনৰ অৱস্থা",
+    reminders: "📅 সোঁৱৰণী",
+    progress: "📊 অগ্ৰগতি",
+    caregiver: "👨‍👩‍👧 যত্ন লওঁতা",
+    assistant: "🤖 স্মৃতি সহায়ক",
+
+    memoryTitle: "🧠 স্মৃতিৰ ক্ৰম",
+    rememberNumbers: "তলত দেখুওৱা সংখ্যাবোৰ মনত ৰাখক।",
+    enterNumbers: "এতিয়া আপোনাৰ মনত থকা সংখ্যাবোৰ লিখক।",
+    pleaseEnter: "অনুগ্ৰহ কৰি আপোনাৰ উত্তৰ লিখক।",
+    memorySuccess: "✅ বৰ ভাল! আপুনি সঠিকভাৱে মনত ৰাখিছে।",
+    memoryTryAgain: "ঠিক আছে। আকৌ চেষ্টা কৰোঁ আহক।",
+    nextRound: "পৰৱৰ্তী ৰাউণ্ড",
+},
+
+"mni-Mtei": {
+    welcome: "স্বাগতম 👋",
+    cognitiveActivity: "🧠 মশিং তাংখাই ওইবা থবক",
+    startActivity: "থবক হৌজিক হৌগদবা",
+    attention: "🎯 থাংজিং শিংজিনবা",
+    routine: "🔢 নিত্য থবক শেমজিনবা",
+    pattern: "🧩 প্যাটার্ন শিংজিনবা",
+    mood: "😊 মীৎয়েংগী অৱস্থা",
+    reminders: "📅 রিমাইন্ডর",
+    progress: "📊 প্রগ্রেস",
+    caregiver: "👨‍👩‍👧 কেয়ারগিভর",
+    assistant: "🤖 মেমোরি এসিস্টেন্ট",
+
+    memoryTitle: "🧠 মেমোরি সিকোয়েন্স",
+    rememberNumbers: "মখাদা উৎপা নাম্বর্শিং অসি নুংশিংদা থম্মু।",
+    enterNumbers: "হৌজিক নুংশিংদা থম্লিবা নাম্বর্শিং অসি এন্টর তৌ।",
+    pleaseEnter: "মরুপ অসি মখোয়গী উত্তর এন্টর তৌ।",
+    memorySuccess: "✅ ফজরবা! নুংশিংদা সঠিকভাবে থম্লে।",
+    memoryTryAgain: "চিন্তা তৌগনু। অমুক হায়রক্না চেষ্টা তৌসি।",
+    nextRound: "মখাগী রাউন্ড",
+},
+
+lus: {
+    welcome: "Chibai 👋",
+    cognitiveActivity: "🧠 Hriatna Inṭhawnna",
+    startActivity: "Inṭhawnna Ṭan",
+    attention: "🎯 Ngaihtuahna Inṭhawnna",
+    routine: "🔢 Ni tin Thil tihte Hriat Leh",
+    pattern: "🧩 Pattern Hriatna",
+    mood: "😊 Thinrim Dan",
+    reminders: "📅 Hriatna",
+    progress: "📊 Hmasawnna",
+    caregiver: "👨‍👩‍👧 Hmalakpui Tu",
+    assistant: "🤖 Hriatna Ṭanpuitu",
+
+    memoryTitle: "🧠 Hriatna Rual",
+    rememberNumbers: "A hnuaia number-te hi hre reng rawh.",
+    enterNumbers: "Tunah i hre reng number-te hi ziak rawh.",
+    pleaseEnter: "I chhanna hi ziak rawh.",
+    memorySuccess: "✅ A ṭha! Dik takin i hre reng.",
+    memoryTryAgain: "A ṭha e. Tum leh ila.",
+    nextRound: "Round Leh",
+},
+
+bn: {
+    welcome: "স্বাগতম 👋",
+    cognitiveActivity: "🧠 স্মৃতি কার্যকলাপ",
+    startActivity: "কার্যকলাপ শুরু করুন",
+    attention: "🎯 মনোযোগের চ্যালেঞ্জ",
+    routine: "🔢 দৈনন্দিন কাজ মনে করুন",
+    pattern: "🧩 প্যাটার্ন শনাক্তকরণ",
+    mood: "😊 মনের অবস্থা",
+    reminders: "📅 অনুস্মারক",
+    progress: "📊 অগ্রগতি",
+    caregiver: "👨‍👩‍👧 যত্নদাতা",
+    assistant: "🤖 স্মৃতি সহায়ক",
+
+    memoryTitle: "🧠 স্মৃতি ক্রম",
+    rememberNumbers: "নিচে দেখানো সংখ্যাগুলো মনে রাখুন।",
+    enterNumbers: "এখন আপনার মনে থাকা সংখ্যাগুলো লিখুন।",
+    pleaseEnter: "অনুগ্রহ করে আপনার উত্তর লিখুন।",
+    memorySuccess: "✅ দারুণ! আপনি সঠিকভাবে মনে রেখেছেন।",
+    memoryTryAgain: "ঠিক আছে। আবার চেষ্টা করি।",
+    nextRound: "পরবর্তী রাউন্ড",
+},
+
+ne: {
+    welcome: "स्वागत छ 👋",
+    cognitiveActivity: "🧠 स्मरण गतिविधि",
+    startActivity: "गतिविधि सुरु गर्नुहोस्",
+    attention: "🎯 ध्यान चुनौती",
+    routine: "🔢 दैनिक दिनचर्या सम्झनुहोस्",
+    pattern: "🧩 ढाँचा पहिचान",
+    mood: "😊 मनको अवस्था",
+    reminders: "📅 सम्झना",
+    progress: "📊 प्रगति",
+    caregiver: "👨‍👩‍👧 हेरचाहकर्ता",
+    assistant: "🤖 स्मृति सहायक",
+
+    memoryTitle: "🧠 स्मृति क्रम",
+    rememberNumbers: "तल देखाइएका नम्बरहरू सम्झनुहोस्।",
+    enterNumbers: "अब तपाईंलाई याद भएका नम्बरहरू लेख्नुहोस्।",
+    pleaseEnter: "कृपया आफ्नो उत्तर लेख्नुहोस्।",
+    memorySuccess: "✅ उत्कृष्ट! तपाईंले सही रूपमा सम्झनुभयो।",
+    memoryTryAgain: "ठीक छ। फेरि प्रयास गरौँ।",
+    nextRound: "अर्को राउन्ड",
+},
+};
+function getCurrentLanguage() {
+    return languageSelect.value || "en";
+}
+function t(key) {
+    const language = getCurrentLanguage();
+
+    if (
+        translations[language] &&
+        translations[language][key]
+    ) {
+        return translations[language][key];
+    }
+
+    return translations.en[key] || key;
+}
 
 
+
+// ================================
+// APPLY LANGUAGE
+// ================================
+
+function applyLanguage(language) {
+
+    const t = translations[language];
+
+    if (!t) {
+        return;
+    }
+
+    const elements = {
+
+        welcome:
+            document.querySelector(".welcome h2"),
+
+        cognitiveActivity:
+            document.querySelector("#cognitiveActivityCard h3"),
+
+        startActivity:
+            document.getElementById("activityBtn"),
+
+        attention:
+            document.getElementById("attentionBtn"),
+
+        routine:
+            document.getElementById("routineRecallBtn"),
+
+        pattern:
+            document.getElementById("patternGameBtn"),
+
+        mood:
+            document.getElementById("moodCheckinBtn"),
+
+        reminders:
+            document.querySelector(".cards .card:nth-child(2) h3"),
+
+        progress:
+            document.querySelector(".cards .card:nth-child(3) h3"),
+
+        caregiver:
+            document.querySelector(".cards .card:nth-child(4) h3"),
+
+        assistant:
+            document.querySelector(".assistant:last-of-type h2")
+    };
+
+    Object.keys(elements).forEach((key) => {
+
+        if (elements[key] && t[key]) {
+            elements[key].textContent = t[key];
+        }
+
+    });
+
+    applyCulturalGameLabels();
+
+    console.log(
+        "🌐 UI language applied:",
+        language
+    );
+}
